@@ -1,0 +1,32 @@
+{
+  "name": "delivery",
+  "version": "1.0.0",
+  "description": "back end aplicacion delivery",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "flutter",
+    "nodejs\u001b[D\u001b[D",
+    "\u001b",
+    "delivery"
+  ],
+  "author": "sergio ortiz",
+  "license": "MIT",
+  "dependencies": {
+    "bluebird": "^3.7.2",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "express": "^4.17.3",
+    "firebase": "^10.6.0",
+    "http": "^0.0.1-security",
+    "mongodb": "^6.3.0",
+    "mongoose": "^8.0.1",
+    "morgan": "^1.10.0",
+    "mysql": "^2.18.1",
+    "passport": "^0.5.2",
+    "passport-jwt": "^4.0.0",
+    "pg-promise": "^10.11.1"
+  }
+}
