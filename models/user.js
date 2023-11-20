@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const crypto = require('crypto');
+const { use } = require('passport');
 
 const UserSchema = mongoose.Schema({
     email: { type: String, required: true, unique: true },
@@ -85,5 +86,29 @@ User.isPasswordMatched = (candidatePassword, hash) => {
     }
     return false;
 };
+
+User.getByEmail = async (email) => {
+    const user = await User.find().where("email").equals(email);
+    return user;
+};
+
+User.updateAllExceptSensitive = async (userId, userData) => {
+    // Filtra los campos sensibles que no deben ser actualizados
+    const sensitiveFields = ['password', 'image', 'sessionToken', 'rol', 'createdAt', 'updatedAt'];
+    const updateData = Object.keys(userData)
+      .filter(key => !sensitiveFields.includes(key))
+      .reduce((obj, key) => {
+        obj[key] = userData[key];
+        return obj;
+      }, {});
+  
+    // Asegúrate de actualizar la fecha de modificación
+    updateData.updatedAt = Date.now();
+  
+    // Actualiza los campos no sensibles
+    const user = await User.findByIdAndUpdate(userId, updateData, { new: true });
+  
+    return user;
+  };
 
 module.exports = User;

@@ -2,7 +2,10 @@ const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const key = require("../config/key");
 
+
+
 module.exports = {
+  
   async getAll(req, res, next) {
     try {
       const users = await User.getAll();
@@ -243,4 +246,95 @@ module.exports = {
       });
     });
   },
+
+  async getUserById(req, res, next) {
+
+    const verify = await obtenerDatos(req.headers.authorization)
+
+    const email = verify.data.email
+
+    try {
+      const user = await User.getByEmail(email);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado',
+        });
+      }
+      console.log(`Usuario encontrado: ${user}`);
+      return res.status(200).json(user);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: 'Error al obtener el usuario',
+      });
+    }
+  },
+  async updateUser(req, res, next) {
+    try {
+      const userEmail = req.body.email;
+  
+      const existingUser = await User.getByEmail(userEmail);
+      if (!existingUser) {
+        return res.status(404).json({
+          success: false,
+          message: 'Usuario no encontrado',
+        });
+      }  
+      
+      const updatedUser = await User.updateAllExceptSensitive(existingUser[0]._id, req.body);
+  
+      return res.status(201).json({
+        success: true,
+        message: "La actualización se ha realizado con éxito",
+        data: updatedUser,
+      });
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al momento de actualizar",
+        error: error,
+      });
+    }
+  }
 };
+
+async function obtenerDatos(tokenRecibido) {
+
+  const token = tokenRecibido.split(" ")[1]
+
+
+  try {
+    // Verificar y decodificar el token
+    const decoded = jwt.verify(token, key.secretOrKey);
+  
+    // Ahora, 'decoded' contiene la información decodificada del token
+    // console.log('Token decodificado:', decoded);
+  
+    // Puedes retornar los datos en formato JSON
+    const responseJson = {
+      success: true,
+      message: 'Token validado con éxito',
+      data: decoded
+    };
+  
+    // console.log('Respuesta JSON:', responseJson);
+    return responseJson
+  } catch (error) {
+    // Si hay un error al validar el token
+    console.error('Error al validar el token:', error);
+  
+    // Puedes retornar un mensaje de error en formato JSON
+    const errorJson = {
+      success: false,
+      message: 'Error al validar el token',
+      error: error.message
+    };
+  
+    // console.log('Respuesta de error JSON:', errorJson);
+    return errorJson
+  }
+}

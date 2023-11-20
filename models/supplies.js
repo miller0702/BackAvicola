@@ -1,15 +1,14 @@
-const db = require('../config/config');
-
+const db = require("../config/configPg");
 
 const Supplies = {};
 
 Supplies.getAll = () => {
-    const sql = 'SELECT * FROM supplies;';
-    return db.manyOrNone(sql);
+  const sql = "SELECT * FROM supplies;";
+  return db.manyOrNone(sql);
 };
 
 Supplies.findById = (id, callback) => {
-    const sql = `
+  const sql = `
     SELECT
         id
         proveedor,
@@ -19,47 +18,14 @@ Supplies.findById = (id, callback) => {
     FROM
         supplies
     WHERE
-        id=$1`
-    return db.oneOrNone(sql, id).then(supplies => { callback(null, supplies); });
-}
-
-
-Supplies.updateProveedor = (supplies) => {
-    const sql=`
-    UPDATE 
-        supplies
-    SET
-        proveedor=$1
-    WHERE 
-        id=$2;`
-    return db.oneOrNone(sql, [supplies.email,supplies.id]);
-}
-
-Supplies.updateDescripcionCompra = (supplies) => {
-    const sql=`
-    UPDATE 
-        supplies
-    SET
-        descripcioncompra=$1
-    WHERE 
-        id=$2;`
-    return db.oneOrNone(sql, [supplies.email,supplies.id]);
-}
-
-Supplies.updatePrecioCompra = (supplies) => {
-    const sql=`
-    UPDATE 
-        supplies
-    SET
-        preciocompra=$1
-    WHERE 
-        id=$2;`
-    return db.oneOrNone(sql, [supplies.name,supplies.id]);
-}
+        id=$1`;
+  return db.oneOrNone(sql, id).then((supplies) => {
+    callback(null, supplies);
+  });
+};
 
 Supplies.create = (supplies) => {
-
-    const sql = `
+  const sql = `
     INSERT INTO
         supplies(
             proveedor,
@@ -69,18 +35,59 @@ Supplies.create = (supplies) => {
             created_at,
             updated_at  
         )
-    VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id
+    VALUES($1,$2,$3,$4,$5,$6) RETURNING id
     `;
-    return db.oneOrNone(sql, [
-        supplies.proveedor,
-        supplies.descripcioncompra,
-        supplies.preciocompra,
-        supplies.fecha,
-        new Date(),
-        new Date()
-    ]);
+  return db.oneOrNone(sql, [
+    supplies.proveedor,
+    supplies.descripcioncompra,
+    supplies.preciocompra,
+    supplies.fecha,
+    new Date(),
+    new Date(),
+  ]);
 };
 
+Supplies.deleteById = async (id) => {
+  const sql = `
+      DELETE FROM
+        supplies
+      WHERE
+        id=$1
+    `;
+  await db.none(sql, id);
+};
+
+Supplies.update = async (supplies) => {
+  const sql = `
+      UPDATE
+        supplies
+      SET
+        proveedor=$1,
+        descripcioncompra=$2,
+        preciocompra=$3,
+        fecha=$5,    
+        updated_at=$6
+      WHERE
+        id=$7
+    `;
+  await db.none(sql, [
+    supplies.proveedor,
+    supplies.descripcioncompra,
+    supplies.preciocompra,
+    supplies.fecha,
+    new Date(),
+    supplies.id,
+  ]);
+};
+
+Supplies.getTotalSupplies = () => {
+  const sql = `
+    SELECT
+        SUM(preciocompra) AS totalcompras
+    FROM
+        supplies;
+    `;
+  return db.oneOrNone(sql);
+};
 
 module.exports = Supplies;
-

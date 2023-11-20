@@ -22,12 +22,12 @@ app.disable('x-powered-by');
 app.set('port', port1);
 
 // Primer puerto
-server.listen(port1, '0.0.0.0', function () {
+server.listen(port1, '192.168.1.39' || 'localhost', function () {
     console.log('Aplicacion NodeJS id=>' + process.pid + ' puerto=>' + port1 + ' iniciando...');
 });
 
 // Segundo puerto
-app.listen(port2, '0.0.0.0', function () {
+app.listen(port2, '192.168.1.39' || 'localhost', function () {
     console.log('Aplicacion NodeJS id=>' + process.pid + ' puerto=>' + port2 + ' iniciando...');
 });
 

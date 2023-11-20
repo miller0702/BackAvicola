@@ -1,6 +1,7 @@
 const Supplies = require("../models/supplies");
 
 module.exports = {
+  
   async getAll(req, res, next) {
     try {
       const data = await Supplies.getAll();
@@ -35,105 +36,85 @@ module.exports = {
     }
   },
 
-  async updateIdClient(req, res, next) {
+  async update(req, res, next) {
     try {
       const supplies = req.body;
-
-      await Supplies.updateIdClient(supplies);
+      await Supplies.update(supplies);
 
       const data = {
         id: req.body.id,
         proveedor: req.body.proveedor,
+        descripcioncompra: req.body.descripcioncompra,
+        preciocompra: req.body.preciocompra,
+        fecha: req.body.fecha
       };
 
       return res.status(201).json({
         success: true,
-        message: "La actualizacion se ha realizado con exito",
+        message: "La insumo se ha actualizado con éxito",
         data: data,
       });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
-        message: "Error al momento de actualizar",
-        error: error,
-      });
-    }
-  },
-   
-  async updateCantidadPollo(req, res, next) {
-    try {
-      const supplies = req.body;
-
-      await Supplies.updateCantidadPollo(supplies);
-
-      const data = {
-        id: req.body.id,
-        cantidadpollo: req.body.cantidadpollo,
-      };
-
-      return res.status(201).json({
-        success: true,
-        message: "La actualizacion se ha realizado con exito",
-        data: data,
-      });
-    } catch (error) {
-      console.log(`Error: ${error}`);
-      return res.status(501).json({
-        success: false,
-        message: "Error al momento de actualizar",
+        message: "Error al actualizar la insumo",
         error: error,
       });
     }
   },
 
-  async updateCantidadKilos(req, res, next) {
+  async delete(req, res, next) {
     try {
-      const supplies = req.body;
-
-      await Supplies.updateCantidadKilos(supplies);
-
-      const data = {
-        id: req.body.id,
-        cantidadkilos: req.body.cantidadkilos,
-      };
+      const suppliesId = req.params.id;
+      await Supplies.delete(suppliesId);
 
       return res.status(201).json({
         success: true,
-        message: "La actualizacion se ha realizado con exito",
-        data: data,
+        message: "La insumo se ha eliminado con éxito",
       });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
-        message: "Error al momento de actualizar",
+        message: "Error al eliminar la insumo",
         error: error,
       });
     }
   },
 
-  async updatePrecioKilo(req, res, next) {
+  async getById(req, res, next) {
     try {
-      const supplies = req.body;
+      const suppliesId = req.params.id;
+      const supplies = await Supplies.getById(suppliesId);
 
-      await Supplies.updatePrecioKilo(supplies);
+      if (!supplies) {
+        return res.status(404).json({
+          success: false,
+          message: "No se encontró la insumo",
+        });
+      }
 
-      const data = {
-        id: req.body.id,
-        preciokilo: req.body.preciokilo,
-      };
-
-      return res.status(201).json({
-        success: true,
-        message: "La actualizacion se ha realizado con exito",
-        data: data,
-      });
+      return res.status(200).json(supplies);
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
-        message: "Error al momento de actualizar",
+        message: "Error al obtener la insumo por ID",
+        error: error,
+      });
+    }
+  },
+  async getTotalSupplies(req, res, next) {
+    try {
+      const totalSupplies = await Supplies.getTotalSupplies();
+      console.log(`Total de Insumos: ${totalSupplies}`);
+      return res.status(200).json(totalSupplies);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al obtener el total de Insumos",
         error: error,
       });
     }

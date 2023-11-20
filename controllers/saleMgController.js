@@ -1,4 +1,4 @@
-const Sale = require("../models/sale");
+const Sale = require("../models/saleMg");
 
 module.exports = {
   async getAll(req, res, next) {
@@ -103,34 +103,6 @@ module.exports = {
       return res.status(501).json({
         success: false,
         message: "Error al obtener la factura por ID",
-        error: error,
-      });
-    }
-  },
-  async getTotalSale(req, res, next) {
-    try {
-      const totalSale = await Sale.getTotalSale();
-      console.log(`Total de Venta: ${totalSale}`);
-      return res.status(200).json(totalSale);
-    } catch (error) {
-      console.log(`Error: ${error}`);
-      return res.status(501).json({
-        success: false,
-        message: "Error al obtener el total de Venta",
-        error: error,
-      });
-    }
-  },
-  async getTotales(req, res, next) {
-    try {
-      const totalSale = await Sale.getTotales();
-      console.log(`Total de Venta: ${totalSale}`);
-      return res.status(200).json(totalSale);
-    } catch (error) {
-      console.log(`Error: ${error}`);
-      return res.status(501).json({
-        success: false,
-        message: "Error al obtener el total de Venta",
         error: error,
       });
     }

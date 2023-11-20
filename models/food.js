@@ -1,4 +1,4 @@
-const db = require('../config/config');
+const db = require('../config/configPg.js');
 
 
 const Food = {};
@@ -22,6 +22,30 @@ Food.findById = (id, callback) => {
     return db.oneOrNone(sql, id).then(food => { callback(null, food); });
 }
 
+Food.deleteById = async (id) => {
+    const sql = `
+      DELETE FROM
+        food
+      WHERE
+        id=$1
+    `;
+    await db.none(sql, id);
+  };
+  
+  Food.update = async (food) => {
+    const sql = `
+      UPDATE
+        food
+      SET
+        cantidadhembra=$1,
+        cantidadmacho=$2,
+        fecha=$3,
+        updated_at=$4
+      WHERE
+        id=$5
+    `;
+    await db.none(sql, [food.cantidadhembra, food.cantidadmacho, food.fecha, new Date(), food.id]);
+  };
 
 Food.updateCantidadHembra = (food) => {
     const sql=`
@@ -66,7 +90,32 @@ Food.create = (food) => {
         new Date()
     ]);
 };
+Food.getTotalFood = () => {
+    const sql = `
+    SELECT
+        SUM(cantidadhembra) + SUM(cantidadmacho) AS totalFood
+    FROM
+        food;
+    `;
+    return db.oneOrNone(sql);
+};
 
+Food.getFoodByDay = () => {
+    const sql = `
+    SELECT
+  d.fecha,
+  COALESCE(SUM(food.cantidadmacho), 0) AS totalMachos,
+  COALESCE(SUM(food.cantidadhembra), 0) AS totalHembras
+FROM
+  generate_series('2023-11-01'::date, '2023-11-30'::date, '1 day'::interval) AS d(fecha)
+LEFT JOIN
+  food ON food.fecha::date = d.fecha
+GROUP BY
+  d.fecha
+ORDER BY
+  d.fecha;
+    `;
+    return db.manyOrNone(sql);
+};
 
 module.exports = Food;
-
