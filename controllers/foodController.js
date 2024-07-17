@@ -4,7 +4,7 @@ module.exports = {
   async getAll(req, res, next) {
     try {
       const data = await Food.getAll();
-      console.log(`Alimento: ${data}`);
+      console.log(`Alimento:`, data);
       return res.status(201).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
@@ -35,8 +35,6 @@ module.exports = {
     }
   },
 
-
-   
   async updateCantidadHembra(req, res, next) {
     try {
       const food = req.body;
@@ -156,11 +154,13 @@ module.exports = {
       });
     }
   },
+  
   async getTotalFood(req, res, next) {
     try {
-      const totalFood = await Food.getTotalFood();
+      const totalFoodResult = await Food.getTotalFood();
+      const totalFood = totalFoodResult.totalfood ? parseInt(totalFoodResult.totalfood, 10) : 0;
       console.log(`Total de Alimento: ${totalFood}`);
-      return res.status(200).json(totalFood);
+      return res.status(200).json({ totalFood: totalFood });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(501).json({

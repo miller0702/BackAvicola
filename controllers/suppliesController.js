@@ -1,17 +1,16 @@
 const Supplies = require("../models/supplies");
 
 module.exports = {
-  
   async getAll(req, res, next) {
     try {
       const data = await Supplies.getAll();
-      console.log(`Insumo: ${data}`);
-      return res.status(201).json(data);
+      return res.status(200).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener el insumo",
+        message: "Error al obtener los insumos",
+        error: error,
       });
     }
   },
@@ -20,17 +19,16 @@ module.exports = {
     try {
       const supplies = req.body;
       const data = await Supplies.create(supplies);
-
       return res.status(201).json({
         success: true,
-        message: "El registro se ha realizado con exito",
+        message: "El registro se ha realizado con éxito",
         data: data.id,
       });
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al Registrar la Insumo",
+        message: "Error al registrar el insumo",
         error: error,
       });
     }
@@ -41,24 +39,24 @@ module.exports = {
       const supplies = req.body;
       await Supplies.update(supplies);
 
-      const data = {
-        id: req.body.id,
-        proveedor: req.body.proveedor,
-        descripcioncompra: req.body.descripcioncompra,
-        preciocompra: req.body.preciocompra,
-        fecha: req.body.fecha
+      const updatedSupplies = {
+        id: supplies.id,
+        proveedor_id: supplies.proveedor_id,
+        descripcioncompra: supplies.descripcioncompra,
+        preciocompra: supplies.preciocompra,
+        fecha: supplies.fecha,
       };
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        message: "La insumo se ha actualizado con éxito",
-        data: data,
+        message: "El insumo se ha actualizado con éxito",
+        data: updatedSupplies,
       });
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al actualizar la insumo",
+        message: "Error al actualizar el insumo",
         error: error,
       });
     }
@@ -69,15 +67,15 @@ module.exports = {
       const suppliesId = req.params.id;
       await Supplies.delete(suppliesId);
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        message: "La insumo se ha eliminado con éxito",
+        message: "El insumo se ha eliminado con éxito",
       });
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al eliminar la insumo",
+        message: "Error al eliminar el insumo",
         error: error,
       });
     }
@@ -91,30 +89,30 @@ module.exports = {
       if (!supplies) {
         return res.status(404).json({
           success: false,
-          message: "No se encontró la insumo",
+          message: "No se encontró el insumo",
         });
       }
 
       return res.status(200).json(supplies);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener la insumo por ID",
+        message: "Error al obtener el insumo por ID",
         error: error,
       });
     }
   },
+
   async getTotalSupplies(req, res, next) {
     try {
       const totalSupplies = await Supplies.getTotalSupplies();
-      console.log(`Total de Insumos: ${totalSupplies}`);
       return res.status(200).json(totalSupplies);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener el total de Insumos",
+        message: "Error al obtener el total de insumos",
         error: error,
       });
     }

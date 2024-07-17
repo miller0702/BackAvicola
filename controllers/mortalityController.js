@@ -5,7 +5,7 @@ module.exports = {
     try {
       console.log('hola')
       const data = await Mortality.getAll();
-      console.log(`Mortalidad: ${data}`);
+      console.log(`Mortalidad`, data);
       return res.status(201).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
@@ -36,8 +36,6 @@ module.exports = {
     }
   },
 
-
-   
   async updateCantidadHembra(req, res, next) {
     try {
       const mortality = req.body;
@@ -157,11 +155,13 @@ module.exports = {
       });
     }
   },
+
   async getTotalMortality(req, res, next) {
     try {
-      const totalMortality = await Mortality.getTotalMortality();
+      const totalMortalityResult = await Mortality.getTotalMortality();
+      const totalMortality = totalMortalityResult.totalmortality ? parseInt(totalMortalityResult.totalmortality, 10) : 0;
       console.log(`Total de Mortalidad: ${totalMortality}`);
-      return res.status(200).json(totalMortality);
+      return res.status(200).json({ totalMortality: totalMortality });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(501).json({
@@ -171,6 +171,7 @@ module.exports = {
       });
     }
   },
+
   async getMortalitiesByDay(req, res, next) {
     try {
       const mortalitiesByDay = await Mortality.getMortalitiesByDay();

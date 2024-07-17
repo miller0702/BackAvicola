@@ -10,11 +10,11 @@ Supplies.getAll = () => {
 Supplies.findById = (id, callback) => {
   const sql = `
     SELECT
-        id
-        proveedor,
+        id,
+        proveedor_id,
         descripcioncompra,
         preciocompra,
-        fecha,    
+        fecha
     FROM
         supplies
     WHERE
@@ -28,17 +28,17 @@ Supplies.create = (supplies) => {
   const sql = `
     INSERT INTO
         supplies(
-            proveedor,
+            proveedor_id,
             descripcioncompra,
             preciocompra,
-            fecha,  
+            fecha,
             created_at,
-            updated_at  
+            updated_at
         )
-    VALUES($1,$2,$3,$4,$5,$6) RETURNING id
+    VALUES($1, $2, $3, $4, $5, $6) RETURNING id
     `;
   return db.oneOrNone(sql, [
-    supplies.proveedor,
+    supplies.proveedor_id,
     supplies.descripcioncompra,
     supplies.preciocompra,
     supplies.fecha,
@@ -62,16 +62,16 @@ Supplies.update = async (supplies) => {
       UPDATE
         supplies
       SET
-        proveedor=$1,
+        proveedor_id=$1,
         descripcioncompra=$2,
         preciocompra=$3,
-        fecha=$5,    
-        updated_at=$6
+        fecha=$4,
+        updated_at=$5
       WHERE
-        id=$7
+        id=$6
     `;
   await db.none(sql, [
-    supplies.proveedor,
+    supplies.proveedor_id,
     supplies.descripcioncompra,
     supplies.preciocompra,
     supplies.fecha,

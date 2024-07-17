@@ -4,13 +4,14 @@ module.exports = {
   async getAll(req, res, next) {
     try {
       const data = await Sale.getAll();
-      console.log(`Factura: ${data}`);
-      return res.status(201).json(data);
+      console.log(`Facturas: ${data}`);
+      return res.status(200).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener el factura",
+        message: "Error al obtener las facturas",
+        error: error,
       });
     }
   },
@@ -34,31 +35,33 @@ module.exports = {
       });
     }
   },
+
   async update(req, res, next) {
     try {
       const sale = req.body;
       await Sale.update(sale);
 
-      const data = {
+      const updatedData = {
         id: req.body.id,
-        cliente: req.body.cliente,
-        clientecorreo: req.body.clientecorreo,
-        vendedor: req.body.vendedor,
+        cliente_id: req.body.cliente_id,
+        lote_id: req.body.lote_id,
+        user_id: req.body.user_id,
         cantidadaves: req.body.cantidadaves,
-        cantidadkilos: req.body.cantidadkilos,
+        canastas_vacias: req.body.canastas_vacias,
+        canastas_llenas: req.body.canastas_llenas,
         preciokilo: req.body.preciokilo,
         fecha: req.body.fecha,
-        numerofactura: req.body.numerofactura
+        numerofactura: req.body.numerofactura,
       };
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: "La factura se ha actualizado con éxito",
-        data: data,
+        data: updatedData,
       });
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
         message: "Error al actualizar la factura",
         error: error,
@@ -69,15 +72,15 @@ module.exports = {
   async delete(req, res, next) {
     try {
       const saleId = req.params.id;
-      await Sale.delete(saleId);
+      await Sale.deleteById(saleId);
 
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
         message: "La factura se ha eliminado con éxito",
       });
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
         message: "Error al eliminar la factura",
         error: error,
@@ -88,7 +91,7 @@ module.exports = {
   async getById(req, res, next) {
     try {
       const saleId = req.params.id;
-      const sale = await Sale.getById(saleId);
+      const sale = await Sale.findById(saleId);
 
       if (!sale) {
         return res.status(404).json({
@@ -100,37 +103,39 @@ module.exports = {
       return res.status(200).json(sale);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
         message: "Error al obtener la factura por ID",
         error: error,
       });
     }
   },
+
   async getTotalSale(req, res, next) {
     try {
       const totalSale = await Sale.getTotalSale();
-      console.log(`Total de Venta: ${totalSale}`);
+      console.log(`Total de ventas: ${totalSale}`);
       return res.status(200).json(totalSale);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener el total de Venta",
+        message: "Error al obtener el total de ventas",
         error: error,
       });
     }
   },
+
   async getTotales(req, res, next) {
     try {
-      const totalSale = await Sale.getTotales();
-      console.log(`Total de Venta: ${totalSale}`);
-      return res.status(200).json(totalSale);
+      const totales = await Sale.getTotales();
+      console.log(`Totales`,totales);
+      return res.status(200).json(totales);
     } catch (error) {
       console.log(`Error: ${error}`);
-      return res.status(501).json({
+      return res.status(500).json({
         success: false,
-        message: "Error al obtener el total de Venta",
+        message: "Error al obtener los totales",
         error: error,
       });
     }

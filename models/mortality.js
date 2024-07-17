@@ -21,7 +21,7 @@ Mortality.findById = (id, callback) => {
     return db.oneOrNone(sql, id).then(mortality => { callback(null, mortality); });
 }
 
-Mortality.deleteById = async (id) => {
+Mortality.delete = async (id) => {
     const sql = `
       DELETE FROM
         mortality
@@ -29,9 +29,9 @@ Mortality.deleteById = async (id) => {
         id=$1
     `;
     await db.none(sql, id);
-  };
-  
-  Mortality.update = async (mortality) => {
+};
+
+Mortality.update = async (mortality) => {
     const sql = `
       UPDATE
         mortality
@@ -44,28 +44,28 @@ Mortality.deleteById = async (id) => {
         id=$5
     `;
     await db.none(sql, [mortality.cantidadhembra, mortality.cantidadmacho, mortality.fecha, new Date(), mortality.id]);
-  };
+};
 
 Mortality.updateCantidadHembra = (mortality) => {
-    const sql=`
+    const sql = `
     UPDATE 
         mortality
     SET
         cantidadhembra=$1
     WHERE 
         id=$2;`
-    return db.oneOrNone(sql, [mortality.email,mortality.id]);
+    return db.oneOrNone(sql, [mortality.email, mortality.id]);
 }
 
 Mortality.updateCantidadMacho = (mortality) => {
-    const sql=`
+    const sql = `
     UPDATE 
         mortality
     SET
         cantidadmacho=$1
     WHERE 
         id=$2;`
-    return db.oneOrNone(sql, [mortality.name,mortality.id]);
+    return db.oneOrNone(sql, [mortality.name, mortality.id]);
 }
 
 Mortality.create = (mortality) => {
@@ -89,12 +89,13 @@ Mortality.create = (mortality) => {
         new Date()
     ]);
 };
+
 Mortality.getTotalMortality = () => {
     const sql = `
-    SELECT
-        SUM(cantidadhembra) + SUM(cantidadmacho) AS totalMortalidad
-    FROM
-        mortality;
+        SELECT
+            SUM(cantidadhembra) + SUM(cantidadmacho) AS totalmortality
+        FROM
+            mortality;
     `;
     return db.oneOrNone(sql);
 };
@@ -105,14 +106,18 @@ Mortality.getMortalitiesByDay = () => {
     d.fecha,
     COALESCE(SUM(mortality.cantidadmacho), 0) AS totalMachos,
     COALESCE(SUM(mortality.cantidadhembra), 0) AS totalHembras
-  FROM
-    generate_series('2023-11-01'::date, '2023-11-30'::date, '1 day'::interval) AS d(fecha)
-  LEFT JOIN
+FROM
+    (
+        SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
+    ) AS d
+LEFT JOIN
     mortality ON mortality.fecha::date = d.fecha
-  GROUP BY
+GROUP BY
     d.fecha
-  ORDER BY
+ORDER BY
     d.fecha;
+
+
     `;
     return db.manyOrNone(sql);
 };
