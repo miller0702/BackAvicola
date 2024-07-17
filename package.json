@@ -4,6 +4,7 @@
   "description": "back end aplicacion delivery",
   "main": "server.js",
   "scripts": {
+    "start": "node server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -12,7 +13,7 @@
     "\u001b",
     "delivery"
   ],
-  "author": "sergio ortiz",
+  "author": "Miller Alvarez",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.2",
