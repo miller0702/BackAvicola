@@ -21,7 +21,7 @@ app.set('port', port1);
 
 mongoBd().then(() => {
 
-    server.listen(port1, '192.168.1.36' || 'localhost', () => {
+    server.listen(port1,  () => {
         console.log(`Aplicación NodeJS iniciada en el puerto ${port1}`);
     });
 
