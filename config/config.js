@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const mongoBd = async () => {
+    console.log('Intentando conectar a MongoDB...');
     try {
         const connection = await mongoose.connect('mongodb+srv://admin:admin@cluster0.pqb3kvy.mongodb.net/app-avicola?retryWrites=true&w=majority');
 
@@ -13,4 +14,3 @@ const mongoBd = async () => {
 };
 
 module.exports = mongoBd;
-
