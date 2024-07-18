@@ -75,7 +75,7 @@ Customer.delete = (id) => {
     return db.none(sql, id);
 };
 
-Customer.getTotalFood = () => {
+Customer.getTotalCustomers = () => {
     const sql = `
         SELECT COUNT(DOCUMENTO)AS totalcustomers FROM customers;
     `;
