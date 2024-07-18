@@ -5,8 +5,6 @@ const mongoBd = async () => {
         const connection = await mongoose.connect('mongodb+srv://admin:admin@cluster0.pqb3kvy.mongodb.net/app-avicola?retryWrites=true&w=majority', {
             useNewUrlParser: true,
             useUnifiedTopology: true,
-            useFindAndModify: true,
-            useCreateIndex: true
         });
 
         const url = `${connection.connection.host}:${connection.connection.port}`;
