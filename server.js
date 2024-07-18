@@ -1,30 +1,28 @@
 const express = require('express');
+const https = require('https');
+const fs = require('fs');
 const app = express();
-const http = require('http');
-const server = http.createServer(app);
 const logger = require('morgan');
 const cors = require('cors');
 const mongoBd = require('./config/config');
 const configPg = require('./config/configPg');
 const users = require('./routes/routes');
 
-const port1 = process.env.PORT || 3000;
+const port = process.env.PORT || 3000;
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cors());
-
 app.disable('x-powered-by');
-app.set('port', port1);
+app.set('port', port);
+
 
 mongoBd().then(() => {
-
-    server.listen(port1,  () => {
-        console.log(`Aplicación NodeJS iniciada en el puerto ${port1}`);
+    https.createServer(options, app).listen(port, () => {
+        console.log(`Aplicación NodeJS iniciada en el puerto ${port} (HTTPS)`);
     });
-
 }).catch(err => {
     console.error(`Error al iniciar MongoDB: ${err.message}`);
     process.exit(1);
