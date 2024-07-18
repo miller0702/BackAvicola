@@ -57,6 +57,7 @@ module.exports = (app) => {
   app.post("/api/customers/getById", CustomersController.getById);
   app.delete("/api/customers/delete/:id", CustomersController.delete);
   app.put("/api/customers/update", CustomersController.update);
+  app.get('/api/food/getTotalCustomers', CustomersController.getTotalCustomers);
 
   //Suppliers
   app.get('/api/suppliers/getAll', SuppliersController.getAll);

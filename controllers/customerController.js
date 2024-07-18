@@ -99,4 +99,20 @@ module.exports = {
       });
     }
   },
+
+  async getTotalCustomers(req, res, next) {
+    try {
+      const totalCustomersResult = await Customer.getTotalCustomer();
+      const totalCustomers = totalCustomersResult.totalCustomers ? parseInt(totalCustomersResult.totalCustomers, 10) : 0;
+      console.log(`Total de Clientes: ${totalCustomers}`);
+      return res.status(200).json({ totalCustomers: totalCustomers });
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al obtener el total de clientes",
+        error: error,
+      });
+    }
+  },
 };
