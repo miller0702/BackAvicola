@@ -1,12 +1,13 @@
 const promise = require('bluebird');
 const pgp = require('pg-promise')({ promiseLib: promise });
+require('dotenv').config(); // Cargar las variables de entorno
 
 const databaseConfig = {
-    host: 'dpg-cqc1p5ij1k6c73fro240-a.oregon-postgres.render.com',
-    port: 5432,
-    database: 'appavicola',
-    user: 'appavicola_admin',
-    password: 'oOypCihNG6WZb6mH5o99m6XsO5JFvrN5'
+    host: process.env.PG_HOST,
+    port: process.env.PG_PORT,
+    database: process.env.PG_DATABASE,
+    user: process.env.PG_USER,
+    password: process.env.PG_PASSWORD
 };
 
 const db = pgp(databaseConfig);
