@@ -102,7 +102,7 @@ module.exports = {
 
   async getTotalCustomers(req, res, next) {
     try {
-      const totalCustomersResult = await Customer.getTotalCustomer();
+      const totalCustomersResult = await Customer.getTotalCustomers();
       const totalCustomers = totalCustomersResult.totalcustomers ? parseInt(totalCustomersResult.totalcustomers, 10) : 0;
       console.log(`Total de Clientes:`,totalCustomers);
       return res.status(200).json({ totalCustomers: totalCustomers });
