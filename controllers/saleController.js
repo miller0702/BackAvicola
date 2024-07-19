@@ -21,7 +21,7 @@ function formatearPrecio(precio) {
   const numeroPrecio = Number(precio);
 
   if (!isNaN(numeroPrecio) && isFinite(numeroPrecio)) {
-    return `${numeroPrecio.toFixed(2)} USD`; 
+    return `${numeroPrecio.toFixed(2)} USD`;
   } else {
     console.log(`Error: ${precio} no es un número válido.`);
     return 'Precio no válido';
@@ -29,18 +29,18 @@ function formatearPrecio(precio) {
 }
 
 function formatearFecha(fecha) {
-  if (!fecha) return 'Fecha no válida'; 
+  if (!fecha) return 'Fecha no válida';
 
   const fechaObj = new Date(fecha);
-  
+
   if (isNaN(fechaObj.getTime())) {
     return 'Fecha no válida';
   }
-  
+
   const dia = String(fechaObj.getDate()).padStart(2, '0');
-  const mes = String(fechaObj.getMonth() + 1).padStart(2, '0'); 
+  const mes = String(fechaObj.getMonth() + 1).padStart(2, '0');
   const anio = fechaObj.getFullYear();
-  
+
   return `${dia}/${mes}/${anio}`;
 }
 
@@ -190,16 +190,16 @@ module.exports = {
     try {
       const saleId = req.params.id;
       const sale = await Sale.findById(saleId);
-  
+
       if (!sale) {
         return res.status(404).json({
           success: false,
           message: "No se encontró la factura",
         });
       }
-  
+
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
-  
+
       const docDefinition = {
         content: [
           {
@@ -229,7 +229,7 @@ module.exports = {
               },
               {
                 width: '*',
-                text: `Cantidad de Aves: ${sale.cantidadaves}\nTotal Kilos: ${(sale.canastas_llenas - sale.canastas_vacias).toFixed(1)} kg\nPromedio Aves: ${(sale.promedio_aves).toFixed(2)} kg`,
+                text: `Cantidad de Aves: ${sale.cantidadaves}\nTotal Kilos: ${(sale.canastas_llenas - sale.canastas_vacias).toFixed(1)} kg\nPromedio Aves: ${((sale.canastas_llenas - sale.canastas_vacias) / sale.cantidadaves).toFixed(1)} kg`,
                 style: 'clientData'
               }
             ]
@@ -240,12 +240,12 @@ module.exports = {
               widths: [100, 100, 100, '*', '*'],
               body: [
                 [{ text: 'CANASTA VACIA', style: 'tableHeader' }, { text: 'CANASTA CON POLLO', style: 'tableHeader' }, { text: 'PRECIO KILO', style: 'tableHeader' }, { text: 'PRECIO TOTAL', style: 'tableHeader' }],
-                [sale.canastas_vacias, sale.canastas_llenas, `$${sale.preciokilo}`, `$${((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo).toFixed(2)}`]
+                [sale.canastas_vacias, sale.canastas_llenas, `$${sale.preciokilo}`, `$${((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo).toFixed(1)}`]
               ]
             }
           },
           {
-            text: `TOTAL: $${((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo).toFixed(2)}`,
+            text: `TOTAL: $${formatearPrecio(((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo))}`,
             style: 'total'
           }
         ],
@@ -287,13 +287,13 @@ module.exports = {
           }
         }
       };
-  
+
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
       pdfDoc.pipe(res);
       pdfDoc.end();
-  
+
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
@@ -303,6 +303,6 @@ module.exports = {
       });
     }
   }
-  
+
 
 };
