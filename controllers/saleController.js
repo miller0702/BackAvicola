@@ -1,5 +1,5 @@
 const Sale = require("../models/sale");
-const PDFDocument = require('pdfkit');
+const PdfPrinter = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/configPg');
