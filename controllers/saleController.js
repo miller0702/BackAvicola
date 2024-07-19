@@ -4,6 +4,15 @@ const fs = require('fs');
 const path = require('path');
 const db = require('../config/configPg');
 
+const printer = new PdfPrinter({
+  Roboto: {
+    normal: path.join(__dirname, '../fonts/Roboto/Roboto-Regular.ttf'),
+    bold: path.join(__dirname, '../fonts/Roboto/Roboto-Medium.ttf'),
+    italics: path.join(__dirname, '../fonts/Roboto/Roboto-Italic.ttf'),
+    bolditalics: path.join(__dirname, '../fonts/Roboto/Roboto-MediumItalic.ttf')
+  }
+});
+
 module.exports = {
 
   async getAll(req, res, next) {
@@ -146,7 +155,7 @@ module.exports = {
     }
   },
 
-  async generateInvoice(req, res, next) {
+  async getById(req, res, next) {
     try {
       const saleId = req.params.id;
       const sale = await Sale.findById(saleId);
@@ -160,35 +169,126 @@ module.exports = {
 
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
-      const printer = new PdfPrinter({
-        Roboto: {
-          normal: path.join(__dirname, '../fonts/Roboto/Roboto-Regular.ttf'),
-          bold: path.join(__dirname, '../fonts/Roboto/Roboto-Medium.ttf'),
-          italics: path.join(__dirname, '../fonts/Roboto/Roboto-Italic.ttf'),
-          bolditalics: path.join(__dirname, '../fonts/Roboto/Roboto-MediumItalic.ttf')
-        }
-      });
-
       const docDefinition = {
         content: [
-          { text: 'Factura', style: 'header' },
-          `Fecha: ${sale.fecha}`,
-          `Cliente: ${cliente ? cliente.nombre : 'Desconocido'}`,
-          `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`,
-          `Cantidad de Aves: ${sale.cantidadaves}`,
-          `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}`,
-          `Precio por Kilo: ${sale.preciokilo}`,
-          `Total: ${(sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo}`
+          {
+            text: 'Factura',
+            style: 'header'
+          },
+          {
+            columns: [
+              [
+                { text: 'Nombre de la Empresa', style: 'companyName' },
+                { text: 'Dirección: Calle 123', style: 'address' },
+                { text: 'Teléfono: (123) 456-7890', style: 'phone' },
+                { text: 'Correo: info@empresa.com', style: 'email' }
+              ],
+              {
+                text: [
+                  { text: `Número de Factura: ${saleId}\n`, style: 'invoiceNumber' },
+                  { text: `Fecha: ${sale.fecha}\n`, style: 'date' }
+                ],
+                alignment: 'right'
+              }
+            ]
+          },
+          {
+            text: 'Datos del Cliente',
+            style: 'subheader'
+          },
+          {
+            columns: [
+              [
+                { text: `Nombre: ${cliente ? cliente.nombre : 'Desconocido'}`, style: 'clientInfo' },
+                { text: `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`, style: 'clientInfo' }
+              ],
+              {
+                text: [
+                  { text: `Vendedor: ${sale.user_id}\n`, style: 'clientInfo' },
+                  { text: `Cantidad de Aves: ${sale.cantidadaves}\n`, style: 'clientInfo' },
+                  { text: `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}\n`, style: 'clientInfo' },
+                  { text: `Precio por Kilo: ${sale.preciokilo}\n`, style: 'clientInfo' },
+                  { text: `Total: ${(sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo}`, style: 'clientInfo' }
+                ],
+                alignment: 'right'
+              }
+            ]
+          },
+          {
+            text: 'Detalles de la Factura',
+            style: 'subheader'
+          },
+          {
+            table: {
+              widths: [ '*', '*', '*' ],
+              body: [
+                [ 'Descripción', 'Cantidad', 'Precio' ],
+                [ 'Aves', sale.cantidadaves, formatearPrecio(sale.preciokilo) ],
+                [ 'Kilos', sale.canastas_llenas - sale.canastas_vacias, formatearPrecio(sale.preciokilo) ]
+              ]
+            },
+            layout: 'lightHorizontalLines'
+          },
+          {
+            text: 'Notas:',
+            style: 'notes'
+          },
+          {
+            text: 'Gracias por su compra!',
+            style: 'footer'
+          }
         ],
         styles: {
           header: {
+            fontSize: 22,
+            bold: true,
+            alignment: 'center',
+            margin: [0, 0, 0, 20]
+          },
+          companyName: {
             fontSize: 18,
             bold: true
+          },
+          address: {
+            fontSize: 12
+          },
+          phone: {
+            fontSize: 12
+          },
+          email: {
+            fontSize: 12
+          },
+          invoiceNumber: {
+            fontSize: 14,
+            bold: true
+          },
+          date: {
+            fontSize: 14
+          },
+          subheader: {
+            fontSize: 16,
+            bold: true,
+            margin: [0, 20, 0, 10]
+          },
+          clientInfo: {
+            fontSize: 12
+          },
+          notes: {
+            fontSize: 12,
+            margin: [0, 20, 0, 10]
+          },
+          footer: {
+            fontSize: 12,
+            italics: true,
+            alignment: 'center',
+            margin: [0, 20, 0, 0]
           }
         }
       };
 
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
       pdfDoc.pipe(res);
       pdfDoc.end();
 
@@ -196,10 +296,15 @@ module.exports = {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al generar la factura",
+        message: "Error al obtener la factura por ID",
         error: error,
       });
     }
-  }
+  },
 
 };
+
+// Helper function for formatting price
+function formatearPrecio(precio) {
+  return `${precio.toFixed(2)} USD`; // Ajusta el formato según sea necesario
+}
