@@ -38,7 +38,7 @@ module.exports = (app) => {
   app.post("/api/food/updateCantidadHembra", FoodController.updateCantidadHembra);
   app.post("/api/food/updateCantidadMacho", FoodController.updateCantidadMacho);
   app.get('/api/food/getTotalFood', FoodController.getTotalFood);
-  app.get('/api/Food/getFoodByDay', FoodController.getFoodByDay);
+  app.get('/api/food/getFoodByDay', FoodController.getFoodByDay);
 
   //Mortality
   app.get("/api/mortality/getAll", MortalityController.getAll);
@@ -64,7 +64,7 @@ module.exports = (app) => {
   app.post("/api/suppliers/register", SuppliersController.register);
   app.post("/api/suppliers/getById", SuppliersController.getById);
   app.delete("/api/suppliers/delete/:id", SuppliersController.delete);
-  app.put("/api/suppliers/update", SuppliersController.update);
+  app.put("/api/suppliers/update/:id", SuppliersController.update);
 
   //Lote
   app.get('/api/lote/getAll', LoteController.getAll);
