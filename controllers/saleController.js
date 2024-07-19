@@ -1,5 +1,5 @@
 const Sale = require("../models/sale");
-const PdfPrinter = require('pdfkit');
+const PdfPrinter = require('pdfmake');
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/configPg');
@@ -157,7 +157,7 @@ module.exports = {
           message: "No se encontró la factura",
         });
       }
-
+      
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
       const printer = new PdfPrinter({
@@ -187,9 +187,6 @@ module.exports = {
           }
         }
       };
-
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
 
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       pdfDoc.pipe(res);
