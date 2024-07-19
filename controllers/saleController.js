@@ -3,7 +3,7 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/configPg');
-const dbMg = require('../config/config');
+const connectDB = require('../config/config'); 
 
 module.exports = {
 
@@ -159,8 +159,10 @@ module.exports = {
         });
       }
 
-      const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
+      const dbMg = await connectDB();
       const usuario = await dbMg.collection('users').findOne({ _id: sale.user_id });
+
+      const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
       const printer = new PdfPrinter({
         Roboto: {
