@@ -170,7 +170,7 @@ module.exports = {
     }
   },
 
-  async getById(req, res, next) {
+  async generateInvoice(req, res, next) {
     try {
       const saleId = req.params.id;
       const sale = await Sale.findById(saleId);
