@@ -16,6 +16,18 @@ const printer = new PdfPrinter({
 const logoPath = path.join(__dirname, '../public/images/logo.png');
 const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
+
+function formatearPrecio(precio) {
+  const numeroPrecio = Number(precio);
+
+  if (!isNaN(numeroPrecio) && isFinite(numeroPrecio)) {
+    return `${numeroPrecio.toFixed(2)} USD`; 
+  } else {
+    console.log(`Error: ${precio} no es un número válido.`);
+    return 'Precio no válido';
+  }
+}
+
 module.exports = {
 
   async getAll(req, res, next) {
@@ -213,11 +225,10 @@ module.exports = {
               ],
               {
                 text: [
-                  { text: `Vendedor: ${sale.user_id}\n`, style: 'clientInfo' },
                   { text: `Cantidad de Aves: ${sale.cantidadaves}\n`, style: 'clientInfo' },
                   { text: `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}\n`, style: 'clientInfo' },
-                  { text: `Precio por Kilo: ${sale.preciokilo}\n`, style: 'clientInfo' },
-                  { text: `Total: ${(sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo}`, style: 'clientInfo' }
+                  { text: `Precio por Kilo: ${formatearPrecio(sale.preciokilo)}\n`, style: 'clientInfo' },
+                  { text: `Total: ${formatearPrecio((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo)}`, style: 'clientInfo' }
                 ],
                 alignment: 'right'
               }
@@ -237,7 +248,7 @@ module.exports = {
               ]
             },
             layout: 'lightHorizontalLines'
-          },
+          },          
           {
             text: 'Notas:',
             style: 'notes'
@@ -312,7 +323,3 @@ module.exports = {
   },
 
 };
-
-function formatearPrecio(precio) {
-  return `${precio.toFixed(2)} USD`; 
-}
