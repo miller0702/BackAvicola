@@ -7,7 +7,7 @@ Sale.getAll = () => {
     return db.manyOrNone(sql);
 };
 
-Sale.findById = (id, callback) => {
+Sale.findById = (id) => {
     const sql = `
     SELECT
         id,
@@ -24,7 +24,7 @@ Sale.findById = (id, callback) => {
         sales
     WHERE
         id=$1`;
-    return db.oneOrNone(sql, id).then(sale => { callback(null, sale); });
+    return db.oneOrNone(sql, id);
 };
 
 Sale.create = (sale) => {
