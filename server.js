@@ -1,4 +1,4 @@
-require('dotenv').config(); // Cargar las variables de entorno antes que nada
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const http = require('http');
