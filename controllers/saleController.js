@@ -28,6 +28,22 @@ function formatearPrecio(precio) {
   }
 }
 
+function formatearFecha(fecha) {
+  if (!fecha) return 'Fecha no válida'; 
+
+  const fechaObj = new Date(fecha);
+  
+  if (isNaN(fechaObj.getTime())) {
+    return 'Fecha no válida';
+  }
+  
+  const dia = String(fechaObj.getDate()).padStart(2, '0');
+  const mes = String(fechaObj.getMonth() + 1).padStart(2, '0'); 
+  const anio = fechaObj.getFullYear();
+  
+  return `${dia}/${mes}/${anio}`;
+}
+
 module.exports = {
 
   async getAll(req, res, next) {
@@ -174,144 +190,110 @@ module.exports = {
     try {
       const saleId = req.params.id;
       const sale = await Sale.findById(saleId);
-
+  
       if (!sale) {
         return res.status(404).json({
           success: false,
           message: "No se encontró la factura",
         });
       }
-
+  
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
-
+  
       const docDefinition = {
         content: [
           {
             image: `data:image/png;base64,${logoBase64}`,
-            width: 150,
-            alignment: 'center',
-            margin: [0, 0, 0, 20]
+            width: 100,
+            alignment: 'right',
+            margin: [0, 0, 0, 10]
           },
           {
-            text: 'Factura',
+            text: 'GRANJA DON RAFA LOTE BERMEJAL',
             style: 'header'
           },
           {
+            text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+            style: 'subheader'
+          },
+          {
+            text: `Recibo de Venta\nFecha: ${formatearFecha(sale.fecha)}`,
+            style: 'title'
+          },
+          {
             columns: [
-              [
-                { text: 'GRANJA DON RAFA BERMEJAL', style: 'companyName' },
-                { text: 'DIRECCIÓN: VEREDA BERMEJAL KDX 1 A', style: 'address' },
-                { text: 'Teléfono: 310 767 2929 - 314 374 4532', style: 'phone' },
-                { text: 'OCAÑA, NORTE DE SANTANDER', style: 'email' }
-              ],
               {
-                text: [
-                  { text: `Número de Factura: ${sale.numerofactura}\n`, style: 'invoiceNumber' },
-                  { text: `Fecha: ${sale.fecha}\n`, style: 'date' }
-                ],
-                alignment: 'right'
+                width: '*',
+                text: `Cliente\nNombre: ${cliente ? cliente.nombre : 'Desconocido'}\nDocumento: ${sale.cliente_id}\nTeléfono: ${cliente ? cliente.telefono : 'Desconocido'}`,
+                style: 'clientData'
+              },
+              {
+                width: '*',
+                text: `Cantidad de Aves: ${sale.cantidadaves}\nTotal Kilos: ${(sale.canastas_llenas - sale.canastas_vacias).toFixed(1)} kg\nPromedio Aves: ${(sale.promedio_aves).toFixed(2)} kg`,
+                style: 'clientData'
               }
             ]
           },
           {
-            text: 'Datos del Cliente',
-            style: 'subheader'
-          },
-          {
-            columns: [
-              [
-                { text: `Nombre: ${cliente ? cliente.nombre : 'Desconocido'}`, style: 'clientInfo' },
-                { text: `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`, style: 'clientInfo' }
-              ],
-              {
-                text: [
-                  { text: `Cantidad de Aves: ${sale.cantidadaves}\n`, style: 'clientInfo' },
-                  { text: `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}\n`, style: 'clientInfo' },
-                  { text: `Precio por Kilo: ${formatearPrecio(sale.preciokilo)}\n`, style: 'clientInfo' },
-                  { text: `Total: ${formatearPrecio((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo)}`, style: 'clientInfo' }
-                ],
-                alignment: 'right'
-              }
-            ]
-          },
-          {
-            text: 'Detalles de la Factura',
-            style: 'subheader'
-          },
-          {
+            style: 'tableExample',
             table: {
-              widths: [ '*', '*', '*' ],
+              widths: [100, 100, 100, '*', '*'],
               body: [
-                [ 'Descripción', 'Cantidad', 'Precio' ],
-                [ 'Aves', sale.cantidadaves, formatearPrecio(sale.preciokilo) ],
-                [ 'Kilos', sale.canastas_llenas - sale.canastas_vacias, formatearPrecio(sale.preciokilo) ]
+                [{ text: 'CANASTA VACIA', style: 'tableHeader' }, { text: 'CANASTA CON POLLO', style: 'tableHeader' }, { text: 'PRECIO KILO', style: 'tableHeader' }, { text: 'PRECIO TOTAL', style: 'tableHeader' }],
+                [sale.canastas_vacias, sale.canastas_llenas, `$${sale.preciokilo}`, `$${((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo).toFixed(2)}`]
               ]
-            },
-            layout: 'lightHorizontalLines'
-          },          
-          {
-            text: 'Notas:',
-            style: 'notes'
+            }
           },
           {
-            text: 'Gracias por su compra!',
-            style: 'footer'
+            text: `TOTAL: $${((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo).toFixed(2)}`,
+            style: 'total'
           }
         ],
         styles: {
           header: {
-            fontSize: 22,
+            fontSize: 18,
             bold: true,
             alignment: 'center',
-            margin: [0, 0, 0, 20]
-          },
-          companyName: {
-            fontSize: 18,
-            bold: true
-          },
-          address: {
-            fontSize: 12
-          },
-          phone: {
-            fontSize: 12
-          },
-          email: {
-            fontSize: 12
-          },
-          invoiceNumber: {
-            fontSize: 14,
-            bold: true
-          },
-          date: {
-            fontSize: 14
+            margin: [0, 10, 0, 10]
           },
           subheader: {
+            fontSize: 14,
+            alignment: 'center',
+            margin: [0, 5, 0, 5]
+          },
+          title: {
             fontSize: 16,
             bold: true,
-            margin: [0, 20, 0, 10]
-          },
-          clientInfo: {
-            fontSize: 12
-          },
-          notes: {
-            fontSize: 12,
-            margin: [0, 20, 0, 10]
-          },
-          footer: {
-            fontSize: 12,
-            italics: true,
             alignment: 'center',
-            margin: [0, 20, 0, 0]
+            margin: [0, 5, 0, 10]
+          },
+          clientData: {
+            fontSize: 12,
+            margin: [0, 10, 0, 10]
+          },
+          tableExample: {
+            margin: [0, 10, 0, 10]
+          },
+          tableHeader: {
+            bold: true,
+            fontSize: 13,
+            color: 'black'
+          },
+          total: {
+            fontSize: 16,
+            bold: true,
+            alignment: 'right',
+            margin: [0, 10, 0, 10]
           }
         }
       };
-
+  
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
       pdfDoc.pipe(res);
       pdfDoc.end();
-
+  
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
@@ -320,6 +302,7 @@ module.exports = {
         error: error,
       });
     }
-  },
+  }
+  
 
 };
