@@ -2,12 +2,14 @@ const Sale = require("../models/sale");
 const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
+const db = require('../config/configPg');
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
       const data = await Sale.getAll();
-      console.log(`Facturas: ${data}`);
+      console.log(`Facturas:`, data);
       return res.status(200).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
@@ -132,7 +134,7 @@ module.exports = {
   async getTotales(req, res, next) {
     try {
       const totales = await Sale.getTotales();
-      console.log(`Totales`,totales);
+      console.log(`Totales`, totales);
       return res.status(200).json(totales);
     } catch (error) {
       console.log(`Error: ${error}`);
@@ -143,66 +145,66 @@ module.exports = {
       });
     }
   },
-  
+
   async generateInvoice(req, res, next) {
     try {
-        const saleId = req.params.id;
-        const sale = await Sale.findById(saleId);
+      const saleId = req.params.id;
+      const sale = await Sale.findById(saleId);
 
-        if (!sale) {
-            return res.status(404).json({
-                success: false,
-                message: "No se encontró la factura",
-            });
-        }
-
-        const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
-        const usuario = await db.oneOrNone("SELECT * FROM users WHERE id = $1", sale.user_id);
-
-        const printer = new PdfPrinter({
-            Roboto: {
-                normal: path.join(__dirname, '../fonts/Roboto-Regular.ttf'),
-                bold: path.join(__dirname, '../fonts/Roboto-Medium.ttf'),
-                italics: path.join(__dirname, '../fonts/Roboto-Italic.ttf'),
-                bolditalics: path.join(__dirname, '../fonts/Roboto-MediumItalic.ttf')
-            }
+      if (!sale) {
+        return res.status(404).json({
+          success: false,
+          message: "No se encontró la factura",
         });
+      }
 
-        const docDefinition = {
-            content: [
-                { text: 'Factura', style: 'header' },
-                `Fecha: ${sale.fecha}`,
-                `Cliente: ${cliente ? cliente.nombre : 'Desconocido'}`,
-                `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`,
-                `Vendedor: ${usuario ? usuario.name : 'Desconocido'}`,
-                `Cantidad de Aves: ${sale.cantidadaves}`,
-                `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}`,
-                `Precio por Kilo: ${formatearPrecio(sale.preciokilo)}`,
-                `Total: ${formatearPrecio((sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo)}`
-            ],
-            styles: {
-                header: {
-                    fontSize: 18,
-                    bold: true
-                }
-            }
-        };
+      const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
+      const usuario = await db.oneOrNone("SELECT * FROM users WHERE id = $1", sale.user_id);
 
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
+      const printer = new PdfPrinter({
+        Roboto: {
+          normal: path.join(__dirname, '../fonts/Roboto-Regular.ttf'),
+          bold: path.join(__dirname, '../fonts/Roboto-Medium.ttf'),
+          italics: path.join(__dirname, '../fonts/Roboto-Italic.ttf'),
+          bolditalics: path.join(__dirname, '../fonts/Roboto-MediumItalic.ttf')
+        }
+      });
 
-        const pdfDoc = printer.createPdfKitDocument(docDefinition);
-        pdfDoc.pipe(res);
-        pdfDoc.end();
+      const docDefinition = {
+        content: [
+          { text: 'Factura', style: 'header' },
+          `Fecha: ${sale.fecha}`,
+          `Cliente: ${cliente ? cliente.nombre : 'Desconocido'}`,
+          `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`,
+          `Vendedor: ${usuario ? usuario.name : 'Desconocido'}`,
+          `Cantidad de Aves: ${sale.cantidadaves}`,
+          `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}`,
+          `Precio por Kilo: ${sale.preciokilo}`,
+          `Total: ${(sale.canastas_llenas - sale.canastas_vacias) * sale.preciokilo}`
+        ],
+        styles: {
+          header: {
+            fontSize: 18,
+            bold: true
+          }
+        }
+      };
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
+
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      pdfDoc.pipe(res);
+      pdfDoc.end();
 
     } catch (error) {
-        console.log(`Error: ${error}`);
-        return res.status(500).json({
-            success: false,
-            message: "Error al generar la factura",
-            error: error,
-        });
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al generar la factura",
+        error: error,
+      });
     }
-}
+  }
 
 };
