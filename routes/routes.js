@@ -34,7 +34,7 @@ module.exports = (app) => {
   app.post("/api/food/register", FoodController.register);
   app.post("/api/food/getById", FoodController.getById);
   app.delete("/api/food/delete/:id", FoodController.delete);
-  app.put("/api/food/update", FoodController.update);
+  app.put("/api/food/update/:id", FoodController.update);
   app.post("/api/food/updateCantidadHembra", FoodController.updateCantidadHembra);
   app.post("/api/food/updateCantidadMacho", FoodController.updateCantidadMacho);
   app.get('/api/food/getTotalFood', FoodController.getTotalFood);
@@ -45,7 +45,7 @@ module.exports = (app) => {
   app.post("/api/mortality/register", MortalityController.register);
   app.post("/api/mortality/getById", MortalityController.getById);
   app.delete("/api/mortality/delete/:id", MortalityController.delete);
-  app.put("/api/mortality/update", MortalityController.update);
+  app.put("/api/mortality/update/:id", MortalityController.update);
   app.post("/api/mortality/updateCantidadHembra", MortalityController.updateCantidadHembra);
   app.post("/api/mortality/updateCantidadMacho", MortalityController.updateCantidadMacho);
   app.get('/api/mortality/getTotalMortality', MortalityController.getTotalMortality);
