@@ -1,4 +1,7 @@
 const Sale = require("../models/sale");
+const PDFDocument = require('pdfkit');
+const fs = require('fs');
+const path = require('path');
 
 module.exports = {
   async getAll(req, res, next) {
@@ -136,6 +139,56 @@ module.exports = {
       return res.status(500).json({
         success: false,
         message: "Error al obtener los totales",
+        error: error,
+      });
+    }
+  },
+
+  async generateInvoice(req, res, next) {
+    try {
+      const saleId = req.params.id;
+      const sale = await Sale.findById(saleId);
+
+      if (!sale) {
+        return res.status(404).json({
+          success: false,
+          message: "No se encontró la factura",
+        });
+      }
+
+      const doc = new PDFDocument();
+      const filePath = path.join(__dirname, `../invoices/invoice_${saleId}.pdf`);
+      doc.pipe(fs.createWriteStream(filePath));
+
+      doc.fontSize(25).text(`Factura #${saleId}`, {
+        align: 'center'
+      });
+
+      doc.fontSize(16).text(`Cliente ID: ${sale.cliente_id}`);
+      doc.text(`Lote ID: ${sale.lote_id}`);
+      doc.text(`Usuario ID: ${sale.user_id}`);
+      doc.text(`Cantidad de Aves: ${sale.cantidadaves}`);
+      doc.text(`Canastas Vacías: ${sale.canastas_vacias}`);
+      doc.text(`Canastas Llenas: ${sale.canastas_llenas}`);
+      doc.text(`Precio por Kilo: ${sale.preciokilo}`);
+      doc.text(`Fecha: ${sale.fecha}`);
+      doc.text(`Número de Factura: ${sale.numerofactura}`);
+
+      doc.end();
+
+      doc.on('finish', () => {
+        return res.status(200).json({
+          success: true,
+          message: "Factura generada con éxito",
+          filePath: filePath
+        });
+      });
+
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al generar la factura",
         error: error,
       });
     }

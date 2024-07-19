@@ -96,6 +96,7 @@ module.exports = (app) => {
   app.delete("/api/sale/delete", SaleController.delete);
   app.put("/api/sale/update", SaleController.update);
   app.get('/api/sale/getTotalSale', SaleController.getTotalSale);
+  app.get('/api/sale/:id/invoice', SaleController.generateInvoice);
 
   //Sales Mongo
   app.get("/api/saleMg/getAll", SaleMgController.getAll);
