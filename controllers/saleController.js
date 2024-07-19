@@ -3,7 +3,6 @@ const PDFDocument = require('pdfkit');
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/configPg');
-const connectDB = require('../config/config'); 
 
 module.exports = {
 
@@ -159,9 +158,6 @@ module.exports = {
         });
       }
 
-      const dbMg = await connectDB();
-      const usuario = await dbMg.collection('users').findOne({ _id: sale.user_id });
-
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
       const printer = new PdfPrinter({
@@ -179,7 +175,6 @@ module.exports = {
           `Fecha: ${sale.fecha}`,
           `Cliente: ${cliente ? cliente.nombre : 'Desconocido'}`,
           `Teléfono: ${cliente ? cliente.telefono : 'Desconocido'}`,
-          `Vendedor: ${usuario ? usuario.name : 'Desconocido'}`,
           `Cantidad de Aves: ${sale.cantidadaves}`,
           `Cantidad de Kilos: ${sale.canastas_llenas - sale.canastas_vacias}`,
           `Precio por Kilo: ${sale.preciokilo}`,
