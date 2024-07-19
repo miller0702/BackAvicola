@@ -6,12 +6,27 @@ const db = require('../config/configPg');
 
 const printer = new PdfPrinter({
   Roboto: {
-    normal: path.join(__dirname, '../fonts/Roboto/Roboto-Regular.ttf'),
-    bold: path.join(__dirname, '../fonts/Roboto/Roboto-Medium.ttf'),
-    italics: path.join(__dirname, '../fonts/Roboto/Roboto-Italic.ttf'),
-    bolditalics: path.join(__dirname, '../fonts/Roboto/Roboto-MediumItalic.ttf')
+    normal: path.join(__dirname, '../public/fonts/Roboto/Roboto-Regular.ttf'),
+    bold: path.join(__dirname, '../public/fonts/Roboto/Roboto-Medium.ttf'),
+    italics: path.join(__dirname, '../public/fonts/Roboto/Roboto-Italic.ttf'),
+    bolditalics: path.join(__dirname, '../public/fonts/Roboto/Roboto-MediumItalic.ttf')
   }
 });
+
+const logoPath = path.join(__dirname, '../public/images/logo.png');
+const logoBase64 = fs.readFileSync(logoPath).toString('base64');
+
+function formatDate(date) {
+  const d = new Date(date);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+function formatPrice(price) {
+  return price.toFixed(2);
+}
 
 module.exports = {
 
@@ -172,21 +187,27 @@ module.exports = {
       const docDefinition = {
         content: [
           {
+            image: `data:image/png;base64,${logoBase64}`,
+            width: 150,
+            alignment: 'center',
+            margin: [0, 0, 0, 20]
+          },
+          {
             text: 'Factura',
             style: 'header'
           },
           {
             columns: [
               [
-                { text: 'Nombre de la Empresa', style: 'companyName' },
-                { text: 'Dirección: Calle 123', style: 'address' },
-                { text: 'Teléfono: (123) 456-7890', style: 'phone' },
-                { text: 'Correo: info@empresa.com', style: 'email' }
+                { text: 'GRANJA DON RAFA BERMEJAL', style: 'companyName' },
+                { text: 'DIRECCIÓN: VEREDA BERMEJAL KDX 1 A', style: 'address' },
+                { text: 'Teléfono: 310 767 2929 - 314 374 4532', style: 'phone' },
+                { text: 'OCAÑA, NORTE DE SANTANDER', style: 'email' }
               ],
               {
                 text: [
-                  { text: `Número de Factura: ${saleId}\n`, style: 'invoiceNumber' },
-                  { text: `Fecha: ${sale.fecha}\n`, style: 'date' }
+                  { text: `Número de Factura: ${sale.numerofactura}\n`, style: 'invoiceNumber' },
+                  { text: `Fecha: ${formattedDate}\n`, style: 'date' }
                 ],
                 alignment: 'right'
               }
@@ -304,7 +325,6 @@ module.exports = {
 
 };
 
-// Helper function for formatting price
 function formatearPrecio(precio) {
-  return `${precio.toFixed(2)} USD`; // Ajusta el formato según sea necesario
+  return `${precio.toFixed(2)} USD`; 
 }
