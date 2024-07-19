@@ -42,7 +42,7 @@ CREATE TABLE supplies (
     preciocompra DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES supplies(id)
+    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id)
 );
 
 CREATE TABLE lote (
@@ -54,7 +54,7 @@ CREATE TABLE lote (
     precio DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES supplies(id)
+    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id)
 );
 
 CREATE TABLE buys (
@@ -70,7 +70,7 @@ CREATE TABLE buys (
     valor_con_flete DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES supplies(id)
+    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id)
 );
 
 CREATE TABLE sales (
