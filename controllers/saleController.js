@@ -16,18 +16,6 @@ const printer = new PdfPrinter({
 const logoPath = path.join(__dirname, '../public/images/logo.png');
 const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
-function formatDate(date) {
-  const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day} ${month} ${year}`;
-}
-
-function formatPrice(price) {
-  return price.toFixed(2);
-}
-
 module.exports = {
 
   async getAll(req, res, next) {
@@ -207,7 +195,7 @@ module.exports = {
               {
                 text: [
                   { text: `Número de Factura: ${sale.numerofactura}\n`, style: 'invoiceNumber' },
-                  { text: `Fecha: ${formattedDate}\n`, style: 'date' }
+                  { text: `Fecha: ${sale.fecha}\n`, style: 'date' }
                 ],
                 alignment: 'right'
               }
