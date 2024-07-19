@@ -157,15 +157,15 @@ module.exports = {
           message: "No se encontró la factura",
         });
       }
-      
+
       const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
       const printer = new PdfPrinter({
         Roboto: {
-          normal: path.join(__dirname, '../fonts/Roboto-Regular.ttf'),
-          bold: path.join(__dirname, '../fonts/Roboto-Medium.ttf'),
-          italics: path.join(__dirname, '../fonts/Roboto-Italic.ttf'),
-          bolditalics: path.join(__dirname, '../fonts/Roboto-MediumItalic.ttf')
+          normal: path.join(__dirname, '../fonts/Roboto/Roboto-Regular.ttf'),
+          bold: path.join(__dirname, '../fonts/Roboto/Roboto-Medium.ttf'),
+          italics: path.join(__dirname, '../fonts/Roboto/Roboto-Italic.ttf'),
+          bolditalics: path.join(__dirname, '../fonts/Roboto/Roboto-MediumItalic.ttf')
         }
       });
 
