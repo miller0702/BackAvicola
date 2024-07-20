@@ -1,19 +1,23 @@
 CREATE TABLE food (
     id SERIAL PRIMARY KEY,
+    lote_id INTEGER NOT NULL,
     cantidadhembra INTEGER NOT NULL,
     cantidadmacho INTEGER NOT NULL,
     fecha DATE NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
 
 CREATE TABLE mortality (
     id SERIAL PRIMARY KEY,
+    lote_id INTEGER NOT NULL,
     cantidadhembra INTEGER NOT NULL,
     cantidadmacho INTEGER NOT NULL,
     fecha DATE NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
 
 CREATE TABLE customers (
@@ -37,12 +41,14 @@ CREATE TABLE suppliers (
 CREATE TABLE supplies (
     id SERIAL PRIMARY KEY,
     fecha DATE NOT NULL,
+    lote_id INTEGER NOT NULL,
     proveedor_id INTEGER NOT NULL,
     descripcioncompra VARCHAR(255) NOT NULL,
     preciocompra DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id)
+    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id),
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
 
 CREATE TABLE lote (
@@ -60,6 +66,7 @@ CREATE TABLE lote (
 CREATE TABLE buys (
     id SERIAL PRIMARY KEY,
     fecha DATE NOT NULL,
+    lote_id INTEGER NOT NULL,
     proveedor_id INTEGER NOT NULL,
     procedencia VARCHAR(255) NOT NULL,
     tipo_purina VARCHAR(255) NOT NULL,
@@ -70,7 +77,8 @@ CREATE TABLE buys (
     valor_con_flete DECIMAL(10, 2) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id)
+    FOREIGN KEY (proveedor_id) REFERENCES suppliers(id),
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
 
 CREATE TABLE sales (
@@ -89,6 +97,21 @@ CREATE TABLE sales (
     FOREIGN KEY (cliente_id) REFERENCES customers(id),
     FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
+
+CREATE TABLE payments (
+    id SERIAL PRIMARY KEY,
+    cliente_id INTEGER NOT NULL,
+    lote_id INTEGER NOT NULL,
+    valor INTEGER NOT NULL,
+    fecha DATE NOT NULL,
+    numerofactura VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id) REFERENCES customers(id),
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
+);
+
+
 
 
 

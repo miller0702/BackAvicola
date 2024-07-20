@@ -42,6 +42,7 @@ module.exports = {
       const updatedSupplies = {
         id: supplies.id,
         proveedor_id: supplies.proveedor_id,
+        lote_id: supplies.lote_id,
         descripcioncompra: supplies.descripcioncompra,
         preciocompra: supplies.preciocompra,
         fecha: supplies.fecha,

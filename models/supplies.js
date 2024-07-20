@@ -12,6 +12,7 @@ Supplies.findById = (id, callback) => {
     SELECT
         id,
         proveedor_id,
+        lote_id,
         descripcioncompra,
         preciocompra,
         fecha
@@ -29,16 +30,18 @@ Supplies.create = (supplies) => {
     INSERT INTO
         supplies(
             proveedor_id,
+            lote_id,
             descripcioncompra,
             preciocompra,
             fecha,
             created_at,
             updated_at
         )
-    VALUES($1, $2, $3, $4, $5, $6) RETURNING id
+    VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
     `;
   return db.oneOrNone(sql, [
     supplies.proveedor_id,
+    supplies.lote_id,
     supplies.descripcioncompra,
     supplies.preciocompra,
     supplies.fecha,
@@ -63,15 +66,17 @@ Supplies.update = async (supplies) => {
         supplies
       SET
         proveedor_id=$1,
-        descripcioncompra=$2,
-        preciocompra=$3,
-        fecha=$4,
-        updated_at=$5
+        lote_id=$2,
+        descripcioncompra=$3,
+        preciocompra=$4,
+        fecha=$5,
+        updated_at=$6
       WHERE
-        id=$6
+        id=$7
     `;
   await db.none(sql, [
     supplies.proveedor_id,
+    supplies.lote_id,
     supplies.descripcioncompra,
     supplies.preciocompra,
     supplies.fecha,

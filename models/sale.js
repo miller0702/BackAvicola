@@ -127,7 +127,11 @@ Sale.findByNumeroFactura = (numerofactura) => {
 
 Sale.getTotalSale = () => {
     const sql = `
-    SELECT ROUND(SUM(total)) AS totalGeneral FROM (SELECT cantidadaves * preciokilo AS total FROM sales) AS subquery;
+    SELECT 
+        SUM(preciokilo * (canastas_llenas[i] - canastas_vacias[i])) AS TOTAL_SALES
+    FROM 
+        sales,
+        generate_series(array_lower(canastas_vacias, 1), array_upper(canastas_vacias, 1)) AS i
     `;
     return db.oneOrNone(sql);
 };
@@ -159,3 +163,5 @@ FROM (
 };
 
 module.exports = Sale;
+
+

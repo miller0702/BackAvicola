@@ -11,7 +11,8 @@ Food.getAll = () => {
 Food.findById = (id, callback) => {
   const sql = `
     SELECT
-        id
+        id,
+        lote_id,
         cantidadhembra,
         cantidadmacho,
         fecha,    
@@ -37,14 +38,15 @@ Food.update = async (food) => {
       UPDATE
         food
       SET
-        cantidadhembra=$1,
-        cantidadmacho=$2,
-        fecha=$3,
-        updated_at=$4
+        lote_id=$1,
+        cantidadhembra=$2,
+        cantidadmacho=$3,
+        fecha=$4,
+        updated_at=$5
       WHERE
-        id=$5
+        id=$6
     `;
-  await db.none(sql, [food.cantidadhembra, food.cantidadmacho, food.fecha, new Date(), food.id]);
+  await db.none(sql, [food.lote_id, food.cantidadhembra, food.cantidadmacho, food.fecha, new Date(), food.id]);
 };
 
 Food.updateCantidadHembra = (food) => {
@@ -55,7 +57,7 @@ Food.updateCantidadHembra = (food) => {
         cantidadhembra=$1
     WHERE 
         id=$2;`
-  return db.oneOrNone(sql, [food.email, food.id]);
+  return db.oneOrNone(sql, [food.cantidadhembra, food.id]);
 }
 
 Food.updateCantidadMacho = (food) => {
@@ -66,7 +68,7 @@ Food.updateCantidadMacho = (food) => {
         cantidadmacho=$1
     WHERE 
         id=$2;`
-  return db.oneOrNone(sql, [food.name, food.id]);
+  return db.oneOrNone(sql, [food.cantidadmacho, food.id]);
 }
 
 Food.create = (food) => {
@@ -74,15 +76,17 @@ Food.create = (food) => {
   const sql = `
     INSERT INTO
         food(
+            lote_id,
             cantidadhembra,
             cantidadmacho,
             fecha,  
             created_at,
             updated_at  
         )
-    VALUES($1,$2,$3,$4,$5) RETURNING id
+    VALUES($1,$2,$3,$4,$5, $6) RETURNING id
     `;
   return db.oneOrNone(sql, [
+    food.lote_id,
     food.cantidadhembra,
     food.cantidadmacho,
     food.fecha,

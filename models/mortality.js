@@ -10,7 +10,8 @@ Mortality.getAll = () => {
 Mortality.findById = (id, callback) => {
     const sql = `
     SELECT
-        id
+        id,
+        lote_id,
         cantidadhembra,
         cantidadmacho,
         fecha,    
@@ -35,15 +36,16 @@ Mortality.update = async (mortality) => {
     const sql = `
       UPDATE
         mortality
-      SET
-        cantidadhembra=$1,
-        cantidadmacho=$2,
-        fecha=$3,
-        updated_at=$4
+       SET
+        lote_id=$1,
+        cantidadhembra=$2,
+        cantidadmacho=$3,
+        fecha=$4,
+        updated_at=$5
       WHERE
-        id=$5
+        id=$6
     `;
-    await db.none(sql, [mortality.cantidadhembra, mortality.cantidadmacho, mortality.fecha, new Date(), mortality.id]);
+    await db.none(sql, [mortality.lote_id, mortality.cantidadhembra, mortality.cantidadmacho, mortality.fecha, new Date(), mortality.id]);
 };
 
 Mortality.updateCantidadHembra = (mortality) => {
@@ -54,7 +56,7 @@ Mortality.updateCantidadHembra = (mortality) => {
         cantidadhembra=$1
     WHERE 
         id=$2;`
-    return db.oneOrNone(sql, [mortality.email, mortality.id]);
+    return db.oneOrNone(sql, [mortality.cantidadhembra, mortality.id]);
 }
 
 Mortality.updateCantidadMacho = (mortality) => {
@@ -65,7 +67,7 @@ Mortality.updateCantidadMacho = (mortality) => {
         cantidadmacho=$1
     WHERE 
         id=$2;`
-    return db.oneOrNone(sql, [mortality.name, mortality.id]);
+    return db.oneOrNone(sql, [mortality.cantidadmacho, mortality.id]);
 }
 
 Mortality.create = (mortality) => {
@@ -73,15 +75,17 @@ Mortality.create = (mortality) => {
     const sql = `
     INSERT INTO
         mortality(
+           lote_id,
             cantidadhembra,
             cantidadmacho,
             fecha,  
             created_at,
             updated_at  
         )
-    VALUES($1,$2,$3,$4,$5) RETURNING id
+    VALUES($1,$2,$3,$4,$5, $6) RETURNING id
     `;
     return db.oneOrNone(sql, [
+        mortality.lote_id,
         mortality.cantidadhembra,
         mortality.cantidadmacho,
         mortality.fecha,

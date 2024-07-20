@@ -94,6 +94,7 @@ module.exports = {
 
       const data = {
         id: req.body.id,
+        lote_id: req.body.lote_id,
         cantidadHembra: req.body.cantidadHembra,
         cantidadMacho: req.body.cantidadMacho,
       };

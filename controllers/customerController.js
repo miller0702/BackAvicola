@@ -17,6 +17,22 @@ module.exports = {
     }
   },
 
+  async getCustomers(req, res, next) {
+    try {
+        const customers = await Customer.getCustomers();
+        console.log("Clientes:", customers);
+        return res.status(200).json(customers);
+    } catch (error) {
+        console.error(`Error al obtener clientes: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Error al obtener los clientes",
+            error: error.message,
+        });
+    }
+},
+
+
   async register(req, res, next) {
     try {
       const { id, nombre, telefono, documento } = req.body;

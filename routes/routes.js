@@ -10,6 +10,7 @@ const SaleMgController = require("../controllers/saleMgController");
 const CustomersController = require("../controllers/customerController");
 const SuppliersController = require("../controllers/supplierController");
 const LoteController = require("../controllers/loteController");
+const PaymentController = require("../controllers/paymentController");
 
 module.exports = (app) => {
   // Pagos
@@ -58,7 +59,7 @@ module.exports = (app) => {
   app.delete("/api/customers/delete/:id", CustomersController.delete);
   app.put("/api/customers/update", CustomersController.update);
   app.get('/api/customers/getTotalCustomers', CustomersController.getTotalCustomers);
-
+  app.get('/api/customers/getCustomers', CustomersController.getCustomers);
   //Suppliers
   app.get('/api/suppliers/getAll', SuppliersController.getAll);
   app.post("/api/suppliers/register", SuppliersController.register);
@@ -88,6 +89,15 @@ module.exports = (app) => {
   app.delete("/api/buys/delete/:id", BuysController.delete);
   app.put("/api/buys/update", BuysController.update);
   app.get('/api/buys/getTotalBuys', BuysController.getTotalBuys);
+
+  //Payments
+  app.get("/api/payment/getAll", PaymentController.getAll);
+  app.post("/api/payment/register", PaymentController.register);
+  app.post("/api/payment/getById", PaymentController.getById);
+  app.delete("/api/payment/delete", PaymentController.delete);
+  app.put("/api/payment/update", PaymentController.update);
+  app.get('/api/payment/getTotalSale', PaymentController.getTotalPayment);
+  app.get('/api/payment/:id/invoice', PaymentController.generateInvoice);
 
   //Sales Postgres
   app.get("/api/sale/getAll", SaleController.getAll);

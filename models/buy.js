@@ -14,6 +14,7 @@ Buys.findById = async (id) => {
           id,
           fecha,
           proveedor_id,
+          lote_id,
           procedencia,
           tipo_purina,
           cantidad_bultos,
@@ -38,6 +39,7 @@ Buys.create = async (buys) => {
       INSERT INTO
           buys(
               proveedor_id,
+              lote_id,
               procedencia,
               tipo_purina,
               cantidad_bultos,
@@ -49,10 +51,11 @@ Buys.create = async (buys) => {
               created_at,
               updated_at
           )
-      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id
+      VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING id
       `;
     const newBuyId = await db.one(sql, [
       buys.proveedor_id,
+      buys.lote_id,
       buys.procedencia,
       buys.tipo_purina,
       buys.cantidad_bultos,
@@ -91,20 +94,22 @@ Buys.update = async (buys) => {
           buys
         SET
           proveedor_id=$1,
-          procedencia=$2,
-          tipo_purina=$3,
-          cantidad_bultos=$4,
-          valor_unitario=$5,
-          valor_flete=$6,
-          valor_bultos=$7,
-          valor_con_flete=$8,
-          fecha=$9,
-          updated_at=$10
+          lote_id=$2
+          procedencia=$3,
+          tipo_purina=$4,
+          cantidad_bultos=$5,
+          valor_unitario=$6,
+          valor_flete=$7,
+          valor_bultos=$8,
+          valor_con_flete=$9,
+          fecha=$10,
+          updated_at=$11
         WHERE
-          id=$11
+          id=$12
       `;
     await db.none(sql, [
       buys.proveedor_id,
+      buys.lote_id,
       buys.procedencia,
       buys.tipo_purina,
       buys.cantidad_bultos,
