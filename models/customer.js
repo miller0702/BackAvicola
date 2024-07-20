@@ -81,6 +81,7 @@ Customer.getTotalCustomers = () => {
     `;
     return db.oneOrNone(sql);
 };
+
 Customer.getCustomers = async () => {
     const query = `
     WITH Sales_Calculated AS (
@@ -92,8 +93,6 @@ Customer.getCustomers = async () => {
         )) AS total_sales
     FROM 
         sales S
-    WHERE 
-        S.cliente_id = '5'
     GROUP BY 
         S.cliente_id
 ),
@@ -104,8 +103,6 @@ Payments_Sum AS (
         SUM(P.valor) OVER (PARTITION BY P.cliente_id ORDER BY P.fecha) AS total_payments
     FROM 
         payments P
-    WHERE 
-        P.cliente_id = '5'
 ),
 Payments_Last_Abono AS (
     SELECT 
@@ -114,8 +111,6 @@ Payments_Last_Abono AS (
         (SELECT valor FROM payments WHERE cliente_id = P.cliente_id ORDER BY fecha DESC LIMIT 1) AS ultimo_abono
     FROM 
         payments P
-    WHERE 
-        P.cliente_id = '5'
     GROUP BY 
         P.cliente_id
 ),
@@ -136,8 +131,6 @@ Customer_Balance AS (
         Payments_Sum PS ON C.id = PS.cliente_id
     LEFT JOIN 
         Payments_Last_Abono PLA ON C.id = PLA.cliente_id
-    WHERE 
-        C.id = '5'
     GROUP BY 
         C.id, C.nombre, C.documento, C.telefono, SC.total_sales, PLA.ultimo_abono
 )
@@ -155,12 +148,11 @@ FROM
 ORDER BY 
     CB.id;
 
+
     `;
 
     const result = await db.any(query); // Usa `any` para múltiples resultados
     return result;
 };
-
-
 
 module.exports = Customer;
