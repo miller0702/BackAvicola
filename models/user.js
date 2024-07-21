@@ -35,13 +35,8 @@ User.findByEmail = async (email) => {
     return user;
 };
 
-User.updateImage = async (user, url) => {
-    const myPassHashed = crypto.createHash('md5').update(user.password).digest('hex');
-    user.password = myPassHashed;
-
-    await User.updateOne({ id: user.id }, { image: url });
-
-    return user;
+User.updateImage = async (userId, url) => {
+  return await User.findByIdAndUpdate(userId, { image: url, updatedAt: Date.now() }, { new: true });
 };
 
 User.create = async (user) => {

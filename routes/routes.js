@@ -11,26 +11,38 @@ const CustomersController = require("../controllers/customerController");
 const SuppliersController = require("../controllers/supplierController");
 const LoteController = require("../controllers/loteController");
 const PaymentController = require("../controllers/paymentController");
+const EventController = require('../controllers/eventController');
+const multer = require('multer');
+
+const upload = multer({ storage: multer.memoryStorage() });
 
 module.exports = (app) => {
+
+  // Obtener todos los eventos
+  app.get('/api/events/getAll', EventController.getAll);
+  app.get('/api/events/getById/:id', EventController.getById);
+  app.post('/api/events/create', EventController.create);
+  app.put('/api/events/update/:id', EventController.update);
+  app.delete('/api/events/delete/:id', EventController.delete);
+
   // Pagos
   app.post("/api/pagos/obtenerFirma", pagosController.obtenerFirma);
   app.post("/api/pagos/confirmacion", pagosController.confirmacion);
   app.post("/api/pagos/factura", pagosController.getFactura);
 
-  //Users
-  app.get("/api/users/getUserById", UserController.getUserById);
+  // Usuarios
+  app.get("/api/users/getUserById", userController.getUserById);
   app.get("/api/users/getAll", UserController.getAll);
   app.put("/api/users/updateUser", UserController.updateUser);
   app.post("/api/users/updateEmail", UserController.updateEmail);
   app.post("/api/users/updateName", UserController.updateName);
   app.post("/api/users/updateLastName", UserController.updateLastName);
   app.post("/api/users/updatePhone", UserController.updatePhone);
-  app.post("/api/users/updateImage", UserController.updateImage);
+  app.post("/api/users/updateImage", upload.single('file'), UserController.updateImage);
   app.post("/api/users/create", userController.registerUser);
   app.post("/api/users/login", userController.login);
 
-  //Food
+  // Comida
   app.get("/api/food/getAll", FoodController.getAll);
   app.post("/api/food/register", FoodController.register);
   app.post("/api/food/getById", FoodController.getById);
@@ -41,7 +53,7 @@ module.exports = (app) => {
   app.get('/api/food/getTotalFood', FoodController.getTotalFood);
   app.get('/api/food/getFoodByDay', FoodController.getFoodByDay);
 
-  //Mortality
+  // Mortalidad
   app.get("/api/mortality/getAll", MortalityController.getAll);
   app.post("/api/mortality/register", MortalityController.register);
   app.post("/api/mortality/getById", MortalityController.getById);
@@ -52,7 +64,7 @@ module.exports = (app) => {
   app.get('/api/mortality/getTotalMortality', MortalityController.getTotalMortality);
   app.get('/api/mortality/getMortalityByDay', MortalityController.getMortalitiesByDay);
 
-  //Customers
+  // Clientes
   app.get('/api/customers/getAll', CustomersController.getAll);
   app.post("/api/customers/register", CustomersController.register);
   app.post("/api/customers/getById", CustomersController.getById);
@@ -60,60 +72,65 @@ module.exports = (app) => {
   app.put("/api/customers/update", CustomersController.update);
   app.get('/api/customers/getTotalCustomers', CustomersController.getTotalCustomers);
   app.get('/api/customers/getCustomers', CustomersController.getCustomers);
-  //Suppliers
+  app.get('/api/customers/:id/invoice', CustomersController.generateInvoice);
+
+  // Proveedores
   app.get('/api/suppliers/getAll', SuppliersController.getAll);
   app.post("/api/suppliers/register", SuppliersController.register);
   app.post("/api/suppliers/getById", SuppliersController.getById);
   app.delete("/api/suppliers/delete/:id", SuppliersController.delete);
   app.put("/api/suppliers/update/:id", SuppliersController.update);
+  app.get('/api/suppliers/getTotalSuppliers', SuppliersController.getTotalsuppliers);
 
-  //Lote
+  // Lote
   app.get('/api/lote/getAll', LoteController.getAll);
   app.post("/api/lote/register", LoteController.register);
   app.post("/api/lote/getById", LoteController.getById);
   app.delete("/api/lote/delete/:id", LoteController.delete);
-  app.put("/api/lote/update/", LoteController.update);
+  app.put("/api/lote/update/:id", LoteController.update);
+  app.get('/api/lote/:id/invoice', LoteController.reporteGeneralLote);
+  app.get('/api/lote/getTotalLote', LoteController.getTotalLote);
 
-  //Supplies
+  // Suministros
   app.get("/api/supplies/getAll", SuppliesController.getAll);
   app.post("/api/supplies/register", SuppliesController.register);
   app.post("/api/supplies/getById", SuppliesController.getById);
   app.delete("/api/supplies/delete/:id", SuppliesController.delete);
-  app.put("/api/supplies/update", SuppliesController.update);
+  app.put("/api/supplies/update/:id", SuppliesController.update);
   app.get('/api/supplies/getTotalSupplies', SuppliesController.getTotalSupplies);
 
-  //Buys
+  // Compras
   app.get("/api/buys/getAll", BuysController.getAll);
   app.post("/api/buys/register", BuysController.register);
   app.post("/api/buys/getById", BuysController.getById);
   app.delete("/api/buys/delete/:id", BuysController.delete);
-  app.put("/api/buys/update", BuysController.update);
+  app.put("/api/buys/update/:id", BuysController.update);
   app.get('/api/buys/getTotalBuys', BuysController.getTotalBuys);
 
-  //Payments
+  // Pagos
   app.get("/api/payment/getAll", PaymentController.getAll);
   app.post("/api/payment/register", PaymentController.register);
   app.post("/api/payment/getById", PaymentController.getById);
-  app.delete("/api/payment/delete", PaymentController.delete);
-  app.put("/api/payment/update", PaymentController.update);
+  app.delete("/api/payment/delete/:id", PaymentController.delete);
+  app.put("/api/payment/update/:id", PaymentController.update);
   app.get('/api/payment/getTotalSale', PaymentController.getTotalPayment);
   app.get('/api/payment/:id/invoice', PaymentController.generateInvoice);
 
-  //Sales Postgres
+  // Ventas Postgres
   app.get("/api/sale/getAll", SaleController.getAll);
   app.post("/api/sale/register", SaleController.register);
   app.post("/api/sale/getById", SaleController.getById);
-  app.delete("/api/sale/delete", SaleController.delete);
-  app.put("/api/sale/update", SaleController.update);
+  app.delete("/api/sale/delete/:id", SaleController.delete);
+  app.put("/api/sale/update/:id", SaleController.update);
   app.get('/api/sale/getTotalSale', SaleController.getTotalSale);
   app.get('/api/sale/:id/invoice', SaleController.generateInvoice);
 
-  //Sales Mongo
+  // Ventas Mongo
   app.get("/api/saleMg/getAll", SaleMgController.getAll);
   app.post("/api/saleMg/register", SaleMgController.register);
   app.post("/api/saleMg/getById", SaleMgController.getById);
-  app.delete("/api/saleMg/delete", SaleMgController.delete);
-  app.put("/api/saleMg/update", SaleMgController.update);
+  app.delete("/api/saleMg/delete/:id", SaleMgController.delete);
+  app.put("/api/saleMg/update/:id", SaleMgController.update);
 
   // Multi
   app.get('/api/sale/getTotales', SaleController.getTotales);

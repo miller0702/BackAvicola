@@ -99,4 +99,20 @@ module.exports = {
       });
     }
   },
+
+  async getTotalsuppliers(req, res, next) {
+    try {
+      const totalSuppliersResult = await Supplier.getTotalSuppliers();
+      const totalSuppliers = totalSuppliersResult.totalsuppliers ? parseInt(totalSuppliersResult.totalsuppliers, 10) : 0;
+      console.log(`Total de Clientes:`,totalSuppliers);
+      return res.status(200).json({ totalSuppliers: totalSuppliers });
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al obtener el total de clientes",
+        error: error,
+      });
+    }
+  },
 };

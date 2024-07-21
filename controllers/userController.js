@@ -1,8 +1,7 @@
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
 const key = require("../config/key");
-
-
+const { admin, bucket } = require("../config/configFirebase");
 
 module.exports = {
   
@@ -212,39 +211,80 @@ module.exports = {
     }
   },
 
-  async updateImage(req, res, next) {
-    const firebaseConfig = {
-      apiKey: "AIzaSyDnAZDOqCTozQab2Oa4jVrlCcZXEoNL5jk",
-      authDomain: "app-avicola.firebaseapp.com",
-      projectId: "app-avicola",
-      storageBucket: "app-avicola.appspot.com",
-      messagingSenderId: "1071513662784",
-      appId: "1:1071513662784:web:8859a4742db86949c9f6a5",
-      measurementId: "G-GCX28ZJ54K"
-    };
+  updateImage: async (req, res, next) => {
+    try {
+      const userId = req.body.id;
+      const image = req.file;
 
-    const app = initializeApp(firebaseConfig);
+      if (!image) {
+        return res.status(400).json({
+          success: false,
+          message: "No se ha proporcionado una imagen",
+        });
+      }
 
-    const storage = getStorage(app);
+      const fileName = `${Date.now()}_${image.originalname}`;
+      const file = bucket.file(`images/${fileName}`);
+      const stream = file.createWriteStream({
+        metadata: {
+          contentType: image.mimetype,
+        },
+      });
 
-    getDownloadURL(ref(storage, req.body.image)).then(async (url) => {
-      console.log(url);
+      stream.on('error', (error) => {
+        console.error('Error al subir la imagen a Firebase Storage:', error);
+        return res.status(500).json({
+          success: false,
+          message: 'Error al subir la imagen',
+        });
+      });
 
-      const user = req.body.id;
+      stream.on('finish', async () => {
+        const publicUrl = `https://storage.googleapis.com/${bucket.name}/images/${fileName}`;
+        await User.updateImage(userId, publicUrl);
 
-      await User.updateImage(user, url);
+        return res.status(201).json({
+          success: true,
+          message: "La imagen se ha actualizado con exito",
+          data: { imageUrl: publicUrl },
+        });
+      });
 
-      const data = {
-        id: req.body.id,
-        image: url,
-      };
+      stream.end(image.buffer);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al momento de actualizar la imagen",
+        error: error,
+      });
+    }
+  },
 
+  updateAllExceptSensitive: async (req, res, next) => {
+    try {
+      const userId = req.body.id;
+      const updateData = req.body;
+      
+      const updatedUser = await User.updateAllExceptSensitive(userId, updateData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      
       return res.status(201).json({
         success: true,
-        message: "La actualizacion se ha realizado con exito",
-        data: data,
+        message: "Los datos se han actualizado con éxito",
+        data: updatedUser,
       });
-    });
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(501).json({
+        success: false,
+        message: "Error al momento de actualizar los datos",
+        error: error,
+      });
+    }
   },
 
   async getUserById(req, res, next) {

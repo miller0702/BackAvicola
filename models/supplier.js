@@ -75,4 +75,12 @@ Supplier.delete = (id) => {
     return db.none(sql, id);
 };
 
+
+Supplier.getTotalSuppliers = () => {
+    const sql = `
+        SELECT COUNT(DOCUMENTO)AS totalsuppliers FROM suppliers;
+    `;
+    return db.oneOrNone(sql);
+};
+
 module.exports = Supplier;
