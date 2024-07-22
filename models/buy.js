@@ -94,7 +94,7 @@ Buys.update = async (buys) => {
           buys
         SET
           proveedor_id=$1,
-          lote_id=$2
+          lote_id=$2,
           procedencia=$3,
           tipo_purina=$4,
           cantidad_bultos=$5,

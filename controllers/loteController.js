@@ -51,8 +51,8 @@ function formatearFecha(fecha) {
   return `${dia}/${mes}/${anio}`;
 }
 
-
 module.exports = {
+  
   async getAll(req, res, next) {
     try {
       const lotes = await Lote.getAll();

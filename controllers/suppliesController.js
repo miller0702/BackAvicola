@@ -66,7 +66,7 @@ module.exports = {
   async delete(req, res, next) {
     try {
       const suppliesId = req.params.id;
-      await Supplies.delete(suppliesId);
+      await Supplies.deleteById(suppliesId);
 
       return res.status(200).json({
         success: true,
