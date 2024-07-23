@@ -18,6 +18,12 @@ const printer = new PdfPrinter({
 const logoPath = path.join(__dirname, '../public/images/logo.png');
 const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
+const headerImagePath = path.join(__dirname, '../public/images/header.png');
+const footerImagePath = path.join(__dirname, '../public/images/footer.png');
+
+const headerImageBase64 = `data:image/png;base64,${fs.readFileSync(headerImagePath).toString('base64')}`;
+const footerImageBase64 = `data:image/png;base64,${fs.readFileSync(footerImagePath).toString('base64')}`;
+
 
 function formatearPrecio(precio) {
   const numeroPrecio = Number(precio);
@@ -214,12 +220,28 @@ module.exports = {
       const deudaInfo = await Payment.getDeudaActual(sale.cliente_id, fechaActual);
 
       const docDefinition = {
+        header: {
+          image: headerImageBase64,
+          width: 595,
+          height: 80,
+          alignment: 'center',
+          margin: [0, 0, 0, 0]
+        },
+        footer: function (currentPage, pageCount) {
+          return {
+            image: footerImageBase64,
+            width: 595,
+            height: 80,
+            alignment: 'center',
+            margin: [0, -30, 0, 0],
+          };
+        },
         content: [
           {
             canvas: [
               { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
             ],
-            margin: [0, 0, 0, 10]
+            margin: [0, 30, 0, 10]
           },
           {
             columns: [
@@ -268,7 +290,7 @@ module.exports = {
                   `${cliente ? cliente.telefono : 'Desconocido'}\n`,
                   { text: 'Total Abonado: ', bold: true, margin: [0, 0, 0, 5] },
                   `${formatearPrecio(deudaInfo.total_payments)}`
-                  ],
+                ],
                 style: 'clientData'
               },
               {
