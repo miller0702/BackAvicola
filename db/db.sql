@@ -103,6 +103,7 @@ CREATE TABLE payments (
     cliente_id INTEGER NOT NULL,
     lote_id INTEGER NOT NULL,
     valor INTEGER NOT NULL,
+    metodo_pago VARCHAR(255) NOT NULL,
     fecha DATE NOT NULL,
     numerofactura VARCHAR(50) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

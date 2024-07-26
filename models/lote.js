@@ -111,11 +111,24 @@ Lote.getReporteLote = (loteId) => {
     WITH ventas AS (
     SELECT 
         lote_id, 
-        SUM(preciokilo * (canastas_llenas[i] - canastas_vacias[i])) AS total_ventas,
-        SUM(canastas_llenas[i] - canastas_vacias[i]) AS total_kilos
+        SUM(preciokilo * (
+            COALESCE(
+                (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
+            ) - 
+            COALESCE(
+                (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
+            )
+        )) AS total_ventas,
+        SUM(
+            COALESCE(
+                (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
+            ) - 
+            COALESCE(
+                (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
+            )
+        ) AS total_kilos
     FROM 
-        sales,
-        generate_series(array_lower(canastas_vacias, 1), array_upper(canastas_vacias, 1)) AS i
+        sales
     GROUP BY 
         lote_id
 ),
@@ -131,7 +144,7 @@ compras_insumos AS (
 compras_alimento AS (
     SELECT 
         lote_id, 
-        count(id) as total_compras,
+        COUNT(id) AS total_compras,
         SUM(valor_con_flete) AS total_compras_alimento
     FROM 
         buys
@@ -168,8 +181,8 @@ consumo_alimento AS (
 SELECT 
     l.id AS lote_id,
     l.descripcion AS descripcion,
-	l.cantidad_aves AS aves,
-    ca.total_compras,
+    l.cantidad_aves AS aves,
+    COALESCE(ca.total_compras, 0) AS total_compras,
     COALESCE(v.total_ventas, 0) AS total_ventas,
     COALESCE(v.total_kilos, 0) AS total_kilos,
     COALESCE(m.total_mortalidad, 0) AS total_mortalidad,

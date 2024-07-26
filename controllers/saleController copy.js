@@ -1,3 +1,4 @@
+const Sale = require("../models/sale");
 const Payment = require("../models/payment");
 const PdfPrinter = require('pdfmake');
 const fs = require('fs');
@@ -22,6 +23,7 @@ const footerImagePath = path.join(__dirname, '../public/images/footer.png');
 
 const headerImageBase64 = `data:image/png;base64,${fs.readFileSync(headerImagePath).toString('base64')}`;
 const footerImageBase64 = `data:image/png;base64,${fs.readFileSync(footerImagePath).toString('base64')}`;
+
 
 function formatearPrecio(precio) {
   const numeroPrecio = Number(precio);
@@ -50,26 +52,18 @@ function formatearFecha(fecha) {
   return `${dia}/${mes}/${anio}`;
 }
 
-function formatearMes(mes) {
-  const meses = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
-  return meses[mes];
-}
-
 module.exports = {
 
   async getAll(req, res, next) {
     try {
-      const data = await Payment.getAll();
-      console.log(`Abonos:`, data);
+      const data = await Sale.getAll();
+      console.log(`Facturas:`, data);
       return res.status(200).json(data);
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener las abonos",
+        message: "Error al obtener las facturas",
         error: error,
       });
     }
@@ -77,8 +71,8 @@ module.exports = {
 
   async register(req, res, next) {
     try {
-      const payment = req.body;
-      const data = await Payment.create(payment);
+      const sale = req.body;
+      const data = await Sale.create(sale);
 
       return res.status(201).json({
         success: true,
@@ -97,29 +91,32 @@ module.exports = {
 
   async update(req, res, next) {
     try {
-      const payment = req.body;
-      await Payment.update(payment);
+      const sale = req.body;
+      await Sale.update(sale);
 
       const updatedData = {
         id: req.body.id,
         cliente_id: req.body.cliente_id,
         lote_id: req.body.lote_id,
-        numerofactura: req.body.numerofactura,
-        metodo_pago: req.body.metodo_pago,
-        valor: req.body.valor,
+        user_id: req.body.user_id,
+        cantidadaves: req.body.cantidadaves,
+        canastas_vacias: req.body.canastas_vacias,
+        canastas_llenas: req.body.canastas_llenas,
+        preciokilo: req.body.preciokilo,
         fecha: req.body.fecha,
+        numerofactura: req.body.numerofactura,
       };
 
       return res.status(200).json({
         success: true,
-        message: "La abono se ha actualizado con éxito",
+        message: "La factura se ha actualizado con éxito",
         data: updatedData,
       });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al actualizar la abono",
+        message: "Error al actualizar la factura",
         error: error,
       });
     }
@@ -127,18 +124,18 @@ module.exports = {
 
   async delete(req, res, next) {
     try {
-      const paymentId = req.params.id;
-      await Payment.deleteById(paymentId);
+      const saleId = req.params.id;
+      await Sale.deleteById(saleId);
 
       return res.status(200).json({
         success: true,
-        message: "La abono se ha eliminado con éxito",
+        message: "La factura se ha eliminado con éxito",
       });
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al eliminar la abono",
+        message: "Error al eliminar la factura",
         error: error,
       });
     }
@@ -146,37 +143,37 @@ module.exports = {
 
   async getById(req, res, next) {
     try {
-      const paymentId = req.params.id;
-      const payment = await Payment.findById(paymentId);
+      const saleId = req.params.id;
+      const sale = await Sale.findById(saleId);
 
-      if (!payment) {
+      if (!sale) {
         return res.status(404).json({
           success: false,
-          message: "No se encontró la abono",
+          message: "No se encontró la factura",
         });
       }
 
-      return res.status(200).json(payment);
+      return res.status(200).json(sale);
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener la abono por ID",
+        message: "Error al obtener la factura por ID",
         error: error,
       });
     }
   },
 
-  async getTotalPayment(req, res, next) {
+  async getTotalSale(req, res, next) {
     try {
-      const totalPayment = await Payment.getTotalPayment();
-      console.log(`Total de abonos: ${totalPayment}`);
-      return res.status(200).json(totalPayment);
+      const totalSale = await Sale.getTotalSale();
+      console.log(`Total de ventas: ${totalSale}`);
+      return res.status(200).json(totalSale);
     } catch (error) {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener el total de abonos",
+        message: "Error al obtener el total de ventas",
         error: error,
       });
     }
@@ -184,7 +181,7 @@ module.exports = {
 
   async getTotales(req, res, next) {
     try {
-      const totales = await Payment.getTotales();
+      const totales = await Sale.getTotales();
       console.log(`Totales`, totales);
       return res.status(200).json(totales);
     } catch (error) {
@@ -197,22 +194,61 @@ module.exports = {
     }
   },
 
+  async getSaleForDay(req, res, next) {
+    try {
+      const ventasPorDia = await Sale.getSaleForDay();
+      console.log(`Ventas por día:`, ventasPorDia);
+      return res.status(200).json(ventasPorDia);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener las ventas por día",
+        error: error,
+      });
+    }
+  },  
+
+  async getSaleForDayCustomer(req, res, next) {
+    try {
+      const { customerId } = req.params;
+      const saleForDayCustomer = await Sale.getSaleForDayCustomer(customerId);
+      console.log(`Compras por día del cliente ${customerId}:`, saleForDayCustomer);
+      return res.status(200).json(saleForDayCustomer);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener las compras por día del cliente",
+        error: error,
+      });
+    }
+  },
+  
   async generateInvoice(req, res, next) {
     try {
-      const paymentId = req.params.id;
-      const payment = await Payment.findById(paymentId);
+      const saleId = req.params.id;
+      const sale = await Sale.findById(saleId);
 
-      if (!payment) {
+      if (!sale) {
         return res.status(404).json({
           success: false,
-          message: "No se encontró el abono",
+          message: "No se encontró la factura",
         });
       }
 
-      const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", payment.cliente_id);
+      const cliente = await db.oneOrNone("SELECT * FROM customers WHERE id = $1", sale.cliente_id);
 
+      const totalCanastasVacias = sale.canastas_vacias.reduce((acc, val) => acc + val, 0);
+      const totalCanastasLlenas = sale.canastas_llenas.reduce((acc, val) => acc + val, 0);
+      const precioTotal = (totalCanastasLlenas - totalCanastasVacias) * sale.preciokilo;
+
+      const canastasVaciasKg = sale.canastas_vacias.map(value => `${value} kg`);
+      const canastasLlenasKg = sale.canastas_llenas.map(value => `${value} kg`);
+
+      // Obtener la deuda actual del cliente
       const fechaActual = new Date();
-      const deudaInfo = await Payment.getDeudaActual(payment.cliente_id, fechaActual);
+      const deudaInfo = await Payment.getDeudaActual(sale.cliente_id, fechaActual);
 
       const docDefinition = {
         header: {
@@ -232,7 +268,6 @@ module.exports = {
           };
         },
         content: [
-
           {
             canvas: [
               { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
@@ -252,15 +287,15 @@ module.exports = {
                     style: 'subheader'
                   },
                   {
-                    text: `Recibo de Abono: ${payment.numerofactura}\n`,
+                    text: `Recibo de Venta: ${sale.numerofactura}\n`,
                     style: 'title'
                   },
                   {
-                    text: `Fecha: ${formatearFecha(payment.fecha)}`,
+                    text: `Fecha: ${formatearFecha(sale.fecha)}`,
                     style: 'date'
                   },
                   {
-                    text: 'Detalles del Abono',
+                    text: 'Detalles de la Compra',
                     style: 'title2'
                   },
                 ]
@@ -283,18 +318,22 @@ module.exports = {
                   { text: 'Documento: ', bold: true, margin: [0, 0, 0, 5] },
                   `${cliente ? cliente.documento : 'Desconocido'}\n`,
                   { text: 'Teléfono: ', bold: true, margin: [0, 0, 0, 5] },
-                  `${cliente ? cliente.telefono : 'Desconocido'}`
+                  `${cliente ? cliente.telefono : 'Desconocido'}\n`,
+                  { text: 'Total Abonado: ', bold: true, margin: [0, 0, 0, 5] },
+                  `${formatearPrecio(deudaInfo.total_payments)}`
                 ],
                 style: 'clientData'
               },
               {
                 width: '*',
                 text: [
-                  { text: 'Monto del Abono: ', bold: true, margin: [0, 0, 0, 5] },
-                  `${formatearPrecio(payment.valor)}\n`,
-                  { text: 'Saldo Anterior: ', bold: true, margin: [0, 0, 0, 5] },
-                  `${formatearPrecio(deudaInfo.deuda_antigua)}\n`,
-                  { text: 'Saldo Actual: ', bold: true, margin: [0, 0, 0, 5] },
+                  { text: 'Cantidad de Aves: ', bold: true, margin: [0, 0, 0, 5] },
+                  `${sale.cantidadaves}\n`,
+                  { text: 'Total Kilos: ', bold: true, margin: [0, 0, 0, 5] },
+                  `${(totalCanastasLlenas - totalCanastasVacias).toFixed(1)} kg\n`,
+                  { text: 'Promedio Aves: ', bold: true, margin: [0, 0, 0, 5] },
+                  `${((totalCanastasLlenas - totalCanastasVacias) / sale.cantidadaves).toFixed(1)} kg\n`,
+                  { text: 'Deuda Actual: ', bold: true, margin: [0, 0, 0, 5] },
                   `${formatearPrecio(deudaInfo.deuda_actual)}`
                 ],
                 style: 'clientData'
@@ -302,16 +341,44 @@ module.exports = {
             ]
           },
           {
-            text: [
-              { text: 'Descripción: ', bold: true, margin: [0, 0, 0, 10] },
-              `A los ${new Date(payment.fecha).getDate()} días del mes de ${formatearMes(new Date(payment.fecha).getMonth())} se hace entrega de un abono por el valor de ${formatearPrecio(payment.valor)}`
-            ],
-            style: 'description'
+            style: 'tableExample',
+            table: {
+              widths: [100, 150, 100, 100],
+              body: [
+                [
+                  { text: 'CANASTA VACIA', style: 'tableHeader' },
+                  { text: 'CANASTA CON POLLO', style: 'tableHeader' },
+                  { text: 'PRECIO KILO', style: 'tableHeader' },
+                  { text: 'PRECIO TOTAL', style: 'tableHeader' }
+                ],
+                [
+                  { text: `Total Vacias: ${totalCanastasVacias.toFixed(1)} kg`, style: 'textos' },
+                  { text: `Total Llenas: ${totalCanastasLlenas.toFixed(1)} kg`, style: 'textos' },
+                  { text: `${formatearPrecio(sale.preciokilo)}`, style: 'textos' },
+                  { text: `${formatearPrecio(precioTotal.toFixed(0))}`, style: 'textos' }
+                ],
+                ...sale.canastas_vacias.map((canastaVacia, index) => ([
+                  { text: `${canastaVacia} kg`, fillColor: index % 2 === 0 ? '#fce5cd' : null, style: 'textos' },
+                  { text: `${canastasLlenasKg[index] || ''}`, fillColor: index % 2 === 0 ? '#fce5cd' : null, style: 'textos' },
+                  {},
+                  {}
+                ])),
+              ]
+            },
+            layout: {
+              hLineWidth: () => 0,
+              vLineWidth: () => 0,
+              paddingLeft: () => 8,
+              paddingRight: () => 8,
+              paddingTop: () => 4,
+              paddingBottom: () => 4,
+              fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+            }
           },
           {
             text: [
-              { text: 'Total Abonado: ', bold: true },
-              formatearPrecio((payment.valor).toFixed(0))
+              { text: 'Total: ', bold: true },
+              formatearPrecio((precioTotal).toFixed(0))
             ],
             style: 'total'
           },
@@ -358,9 +425,19 @@ module.exports = {
             fontSize: 12,
             margin: [0, 10, 10, 10]
           },
-          description: {
-            fontSize: 12,
-            margin: [0, 10, 0, 10]
+          tableExample: {
+            margin: [0, 10, 0, 10],
+            border: "none"
+          },
+          tableHeader: {
+            bold: true,
+            color: "#ff9900",
+            fontSize: 13,
+            color: 'black',
+            alignment: 'center'
+          },
+          textos: {
+            alignment: 'center',
           },
           total: {
             fontSize: 16,
@@ -374,7 +451,7 @@ module.exports = {
 
       const pdfDoc = printer.createPdfKitDocument(docDefinition);
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `attachment; filename=factura_${paymentId}.pdf`);
+      res.setHeader('Content-Disposition', `attachment; filename=factura_${saleId}.pdf`);
       pdfDoc.pipe(res);
       pdfDoc.end();
 
@@ -382,10 +459,11 @@ module.exports = {
       console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
-        message: "Error al obtener el abono por ID",
+        message: "Error al obtener la factura por ID",
         error: error,
       });
     }
   }
+
 
 };

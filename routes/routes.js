@@ -33,6 +33,7 @@ module.exports = (app) => {
   // Usuarios
   app.get("/api/users/getUserById", userController.getUserById);
   app.get("/api/users/getAll", UserController.getAll);
+  app.put("/api/users/status/:id", userController.updateUserStatus);
   app.put("/api/users/updateUser", UserController.updateUser);
   app.post("/api/users/updateEmail", UserController.updateEmail);
   app.post("/api/users/updateName", UserController.updateName);
@@ -41,6 +42,7 @@ module.exports = (app) => {
   app.post("/api/users/updateImage", upload.single('file'), UserController.updateImage);
   app.post("/api/users/create", userController.registerUser);
   app.post("/api/users/login", userController.login);
+  app.delete('/users/:id', userController.deleteUser);
 
   // Comida
   app.get("/api/food/getAll", FoodController.getAll);
@@ -73,6 +75,7 @@ module.exports = (app) => {
   app.get('/api/customers/getTotalCustomers', CustomersController.getTotalCustomers);
   app.get('/api/customers/getCustomers', CustomersController.getCustomers);
   app.get('/api/customers/:id/invoice', CustomersController.generateInvoice);
+  app.get('/api/customers/:id/invoiceA', CustomersController.generateInvoiceA);
 
   // Proveedores
   app.get('/api/suppliers/getAll', SuppliersController.getAll);
@@ -123,7 +126,10 @@ module.exports = (app) => {
   app.delete("/api/sale/delete/:id", SaleController.delete);
   app.put("/api/sale/update/:id", SaleController.update);
   app.get('/api/sale/getTotalSale', SaleController.getTotalSale);
+  app.get('/api/sale/getSaleForDay', SaleController.getSaleForDay);
   app.get('/api/sale/:id/invoice', SaleController.generateInvoice);
+  app.get('/api/sale/getSaleForDayCustomer', SaleController.getSaleForDayCustomer);
+
 
   // Ventas Mongo
   app.get("/api/saleMg/getAll", SaleMgController.getAll);

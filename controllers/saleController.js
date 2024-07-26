@@ -194,6 +194,36 @@ module.exports = {
     }
   },
 
+  async getSaleForDay(req, res, next) {
+    try {
+      const ventasPorDia = await Sale.getSaleForDay();
+      console.log(`Ventas por día:`, ventasPorDia);
+      return res.status(200).json(ventasPorDia);
+    } catch (error) {
+      console.log(`Error: ${error}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener las ventas por día",
+        error: error,
+      });
+    }
+  },  
+
+  async getSaleForDayCustomer(req, res, next) {
+    try {
+        const saleForDay = await Sale.getSaleForDayCustomer();
+        console.log(`Compras por día de todos los clientes:`, saleForDay);
+        return res.status(200).json(saleForDay);
+    } catch (error) {
+        console.log(`Error: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Error al obtener las compras por día",
+            error: error,
+        });
+    }
+},
+
   async generateInvoice(req, res, next) {
     try {
       const saleId = req.params.id;
@@ -433,6 +463,5 @@ module.exports = {
       });
     }
   }
-
 
 };

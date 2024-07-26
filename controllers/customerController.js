@@ -37,7 +37,6 @@ function formatearPrecio(precio) {
   }
 }
 
-
 function formatearFecha(fecha) {
   if (!fecha) return 'Fecha no válida';
 
@@ -53,7 +52,6 @@ function formatearFecha(fecha) {
 
   return `${dia}/${mes}/${anio}`;
 }
-
 
 module.exports = {
     
@@ -85,8 +83,7 @@ module.exports = {
             error: error.message,
         });
     }
-},
-
+  },
 
   async register(req, res, next) {
     try {
@@ -406,6 +403,243 @@ module.exports = {
         error: error,
       });
     }
-  }
+  },
+  
+  async generateInvoiceA(req, res, next) {
+    try {
+        const clienteId = req.params.id;
+        const cliente = await db.oneOrNone(
+            `SELECT 
+                c.nombre,
+                c.documento,
+                c.telefono,
+                COALESCE(SUM(p.valor), 0) AS total_abonados
+            FROM 
+                customers c
+            LEFT JOIN 
+                payments p ON c.id = p.cliente_id
+            WHERE 
+                c.id = $1
+            GROUP BY 
+                c.id`,
+            clienteId
+        );
 
+        if (!cliente) {
+            return res.status(404).json({
+                success: false,
+                message: "No se encontró el cliente",
+            });
+        }
+
+        
+        const ventas = await db.any("SELECT * FROM sales WHERE cliente_id = $1", clienteId);
+
+        const abonos = await db.any("SELECT * FROM payments WHERE cliente_id = $1", clienteId);
+
+        const totalCanastasVacias = ventas.reduce((acc, sale) => acc + sale.canastas_vacias.reduce((acc, val) => acc + val, 0), 0);
+        const totalCanastasLlenas = ventas.reduce((acc, sale) => acc + sale.canastas_llenas.reduce((acc, val) => acc + val, 0), 0);
+        const precioTotal = ventas.reduce((acc, sale) => acc + ((sale.canastas_llenas.reduce((acc, val) => acc + val, 0) - sale.canastas_vacias.reduce((acc, val) => acc + val, 0)) * sale.preciokilo), 0);
+
+        const fechaActual = new Date();
+        const deudaInfo = await Payment.getDeudaActual(clienteId, fechaActual);
+
+        const docDefinition = {
+            header: {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+            },
+            footer: function (currentPage, pageCount) {
+                return {
+                    image: footerImageBase64,
+                    width: 595,
+                    height: 80,
+                    alignment: 'center',
+                    margin: [0, -30, 0, 0],
+                };
+            },
+            content: [
+                {
+                    canvas: [
+                        { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
+                    ],
+                    margin: [0, 30, 0, 10]
+                },
+                {
+                    columns: [
+                        {
+                            stack: [
+                                {
+                                    text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                                    style: 'header'
+                                },
+                                {
+                                    text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                                    style: 'subheader'
+                                },
+                                {
+                                    text: `Fecha: ${formatearFecha(new Date())}`,
+                                    style: 'date'
+                                },
+                                {
+                                    text: 'Detalles de los Abonos',
+                                    style: 'title'
+                                },
+                            ]
+                        },
+                        {
+                            image: `data:image/png;base64,${logoBase64}`,
+                            width: 100,
+                            alignment: 'right',
+                            margin: [0, 0, 0, 20]
+                        }
+                    ]
+                },
+                {
+                    columns: [
+                        {
+                            width: '*',
+                            text: [
+                                { text: 'Nombre: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${cliente.nombre}\n`,
+                                { text: 'Documento: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${cliente.documento}\n`,
+                                { text: 'Teléfono: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${cliente.telefono}\n`,
+                                { text: 'Total Abonado: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${formatearPrecio(cliente.total_abonados)}`
+                            ],
+                            style: 'clientData'
+                        },
+                        {
+                            width: '*',
+                            text: [
+                                { text: 'Total Kilos Llenos: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${totalCanastasLlenas.toFixed(1)} kg\n`,
+                                { text: 'Total Kilos Vacíos: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${totalCanastasVacias.toFixed(1)} kg\n`,
+                                { text: 'Deuda Actual: ', bold: true, margin: [0, 0, 0, 5] },
+                                `${formatearPrecio(deudaInfo.deuda_actual)}`
+                            ],
+                            style: 'clientData'
+                        }
+                    ]
+                },
+                {
+                    style: 'tableExample',
+                    table: {
+                        widths: [70, 100, 100, 100],
+                        body: [
+                            [
+                                { text: 'ABONO', style: 'tableHeader' },
+                                { text: 'FECHA', style: 'tableHeader' },
+                                { text: 'MÉTODO PAGO', style: 'tableHeader' },
+                                { text: 'VALOR', style: 'tableHeader' },
+                            ],
+                            ...abonos.map(payment => [
+                                { text: payment.numerofactura, style: 'textos' },
+                                { text: formatearFecha(payment.fecha), style: 'textos' },
+                                { text: payment.metodo_pago, style: 'textos' },
+                                { text: formatearPrecio(payment.valor), style: 'textos' }
+                            ])
+                        ]
+                    },
+                    layout: {
+                        hLineWidth: () => 0,
+                        vLineWidth: () => 0,
+                        paddingLeft: () => 8,
+                        paddingRight: () => 8,
+                        paddingTop: () => 4,
+                        paddingBottom: () => 4,
+                        fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                    }
+                },
+                {
+                    text: [
+                        { text: 'Total General de Abonos: ', bold: true },
+                        formatearPrecio(cliente.total_abonados)
+                    ],
+                    style: 'total'
+                },
+                {
+                    canvas: [
+                        { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
+                    ],
+                    margin: [0, 0, 0, 10]
+                },
+            ],
+            styles: {
+                header: {
+                    fontSize: 22,
+                    color: "#ff9900",
+                    bold: true,
+                    alignment: 'left',
+                    margin: [0, 10, 0, 10]
+                },
+                subheader: {
+                    fontSize: 12,
+                    alignment: 'left',
+                    margin: [0, 5, 0, 5]
+                },
+                title: {
+                    fontSize: 20,
+                    bold: true,
+                    color: "#ff9900",
+                    alignment: 'left',
+                    margin: [0, 5, 0, 0]
+                },
+                date: {
+                    fontSize: 12,
+                    bold: true,
+                    color: "#ff0000",
+                    alignment: 'left',
+                    margin: [0, 5, 0, 10]
+                },
+                clientData: {
+                    fontSize: 12,
+                    margin: [0, 10, 10, 10]
+                },
+                tableExample: {
+                    margin: [0, 10, 0, 10],
+                    border: "none"
+                },
+                tableHeader: {
+                    bold: true,
+                    color: "#ff9900",
+                    fontSize: 13,
+                    color: 'black',
+                    alignment: 'center'
+                },
+                textos: {
+                    alignment: 'center',
+                },
+                total: {
+                    fontSize: 16,
+                    bold: true,
+                    color: "#ff9900",
+                    alignment: 'right',
+                    margin: [0, 10, 0, 10]
+                }
+            }
+        };
+
+        const pdfDoc = printer.createPdfKitDocument(docDefinition);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename=abonos_${clienteId}.pdf`);
+        pdfDoc.pipe(res);
+        pdfDoc.end();
+
+    } catch (error) {
+        console.log(`Error: ${error}`);
+        return res.status(500).json({
+            success: false,
+            message: "Error al obtener la factura por ID",
+            error: error,
+        });
+    }
+}
+  
 };

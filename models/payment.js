@@ -14,6 +14,7 @@ Payment.findById = (id) => {
         cliente_id,
         lote_id,
         valor,
+        metodo_pago,
         fecha, 
         numerofactura   
     FROM
@@ -30,17 +31,19 @@ Payment.create = (payment) => {
             cliente_id,
             lote_id,
             valor,
+            metodo_pago,
             fecha,
             numerofactura,
             created_at,
             updated_at  
         )
-    VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING id;
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id;
     `;
     return db.oneOrNone(sql, [
         payment.cliente_id,
         payment.lote_id,
         payment.valor,
+        payment.metodo_pago,
         payment.fecha,
         payment.numerofactura,
         new Date(),
@@ -66,17 +69,18 @@ Payment.update = async (payment) => {
         cliente_id=$1,
         lote_id=$2,
         valor=$3,
-        cantidadaves=$4,
-        fecha=$8,    
-        numerofactura=$9,
-        updated_at=$10
+        metodo_pago=$4,
+        fecha=$5,    
+        numerofactura=$6,
+        updated_at=$7
       WHERE
-        id=$11;
+        id=$8;
     `;
     await db.none(sql, [
         payment.cliente_id,
         payment.lote_id,
         payment.valor,
+        payment.metodo_pago,
         payment.fecha,
         payment.numerofactura,
         new Date(),
@@ -91,6 +95,7 @@ Payment.findByNumeroFactura = (numerofactura) => {
         cliente_id,
         lote_id,
         valor,
+        metodo_pago,
         fecha, 
         numerofactura   
     FROM

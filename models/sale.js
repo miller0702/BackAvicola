@@ -127,11 +127,14 @@ Sale.findByNumeroFactura = (numerofactura) => {
 
 Sale.getTotalSale = () => {
     const sql = `
-    SELECT 
-        SUM(preciokilo * (canastas_llenas[i] - canastas_vacias[i])) AS TOTAL_SALES
-    FROM 
-        sales,
-        generate_series(array_lower(canastas_vacias, 1), array_upper(canastas_vacias, 1)) AS i
+    SELECT
+    SUM(
+        ((
+            (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado) -
+            (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado)
+        ) * preciokilo)
+    ) AS total_sales
+    FROM sales;
     `;
     return db.oneOrNone(sql);
 };
@@ -139,28 +142,96 @@ Sale.getTotalSale = () => {
 Sale.getTotales = () => {
     const sql = `
     SELECT 
-    TOTAL_SUPPLIES,
-    TOTAL_SALES,
-    TOTAL_BUYS
-FROM (
-    SELECT SUM(PRECIOCOMPRA) AS TOTAL_SUPPLIES 
-    FROM SUPPLIES
-) AS SUPPLIES_TOTAL,
-(
-    SELECT SUM(VALOR_CON_FLETE) AS TOTAL_BUYS 
-    FROM BUYS
-) AS BUYS_TOTAL,
-(
-    SELECT 
-        SUM(preciokilo * (canastas_llenas[i] - canastas_vacias[i])) AS TOTAL_SALES
+    SUPPLIES_TOTAL.TOTAL_SUPPLIES,
+    BUYS_TOTAL.TOTAL_BUYS,
+	TOTAL_LOTE.PRECIO_LOTE,
+    SALES_TOTAL.TOTAL_SALES
     FROM 
-        sales,
-        generate_series(array_lower(canastas_vacias, 1), array_upper(canastas_vacias, 1)) AS i
-) AS SALES_TOTAL;
-
+    (SELECT SUM(PRECIOCOMPRA) AS TOTAL_SUPPLIES 
+     FROM SUPPLIES
+    ) AS SUPPLIES_TOTAL,
+	 (SELECT PRECIO AS PRECIO_LOTE
+     FROM LOTE
+    ) AS TOTAL_LOTE,
+    (SELECT SUM(VALOR_CON_FLETE) AS TOTAL_BUYS 
+     FROM BUYS
+    ) AS BUYS_TOTAL,
+    (SELECT 
+        SUM(preciokilo * (
+            (SELECT COALESCE(SUM(llenado), 0) FROM UNNEST(canastas_llenas) AS llenado) -
+            (SELECT COALESCE(SUM(vaciado), 0) FROM UNNEST(canastas_vacias) AS vaciado)
+        )) AS TOTAL_SALES
+     FROM sales
+    ) AS SALES_TOTAL;
     `;
     return db.oneOrNone(sql);
 };
+
+Sale.getVentasPorMes = async () => {
+    const sql = `
+    WITH ventas_expandidas AS (
+        SELECT
+            fecha,
+            preciokilo,
+            unnest(canastas_llenas) - unnest(canastas_vacias) AS canastas
+        FROM sales
+    )
+    SELECT
+        TO_CHAR(DATE_TRUNC('month', fecha), 'YYYY-MM') AS mes,
+        SUM(preciokilo * canastas) AS total_ventas
+    FROM ventas_expandidas
+    GROUP BY DATE_TRUNC('month', fecha)
+    ORDER BY mes;
+    `;
+    return db.any(sql);
+};
+
+Sale.getSaleForDay = async () => {
+    const sql = `
+    WITH ventas_expandidas AS (
+    SELECT
+        fecha,
+        preciokilo,
+        cantidadaves,
+        -- Calcula la diferencia entre canastas llenas y vacías
+        COALESCE(
+            (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado) -
+            (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado),
+            0
+        ) AS diferencia_canastas
+    FROM sales
+    )
+    SELECT
+        TO_CHAR(fecha, 'YYYY-MM-DD') AS dia,
+        SUM(preciokilo * diferencia_canastas) AS total_ventas,
+        SUM(cantidadaves) AS total_cantidad_aves
+    FROM ventas_expandidas
+    GROUP BY fecha
+    ORDER BY dia;
+    `;
+    return db.any(sql);
+};
+
+Sale.getSaleForDayCustomer = async () => {
+    const sql = `
+      SELECT 
+          S.cliente_id,
+          S.cantidadaves,
+          TO_CHAR(S.fecha, 'YYYY-MM-DD') AS dia,
+          SUM(S.preciokilo * (
+              (SELECT SUM(llenado) FROM UNNEST(S.canastas_llenas) AS llenado) -
+              (SELECT SUM(vaciado) FROM UNNEST(S.canastas_vacias) AS vaciado)
+          )) AS total_compras
+      FROM 
+          sales S
+      GROUP BY 
+          S.cliente_id, S.fecha, S.cantidadaves
+      ORDER BY 
+          S.fecha;
+    `;
+    console.log(`Ejecutando consulta SQL para todas las ventas por día`);
+    return db.any(sql);
+}
 
 module.exports = Sale;
 
