@@ -46,7 +46,6 @@ Sale.create = (sale) => {
     return db.oneOrNone(sql, [
         sale.cliente_id,
         sale.lote_id,
-        sale.user_id,
         sale.cantidadaves,
         sale.canastas_vacias,
         sale.canastas_llenas,
