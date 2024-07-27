@@ -13,7 +13,6 @@ Sale.findById = (id) => {
         id,
         cliente_id,
         lote_id,
-        user_id,
         cantidadaves,
         canastas_vacias,
         canastas_llenas,
@@ -33,7 +32,6 @@ Sale.create = (sale) => {
         sales (
             cliente_id,
             lote_id,
-            user_id,
             cantidadaves,
             canastas_vacias,
             canastas_llenas,
@@ -43,7 +41,7 @@ Sale.create = (sale) => {
             created_at,
             updated_at  
         )
-    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id;
+    VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING id;
     `;
     return db.oneOrNone(sql, [
         sale.cliente_id,
@@ -77,21 +75,19 @@ Sale.update = async (sale) => {
       SET
         cliente_id=$1,
         lote_id=$2,
-        user_id=$3,
-        cantidadaves=$4,
-        canastas_vacias=$5,
-        canastas_llenas=$6,
-        preciokilo=$7,
-        fecha=$8,    
-        numerofactura=$9,
-        updated_at=$10
+        cantidadaves=$3,
+        canastas_vacias=$4,
+        canastas_llenas=$5,
+        preciokilo=$6,
+        fecha=$7,    
+        numerofactura=$8,
+        updated_at=$9
       WHERE
-        id=$11;
+        id=$10;
     `;
     await db.none(sql, [
         sale.cliente_id,
         sale.lote_id,
-        sale.user_id,
         sale.cantidadaves,
         sale.canastas_vacias,
         sale.canastas_llenas,
@@ -109,7 +105,6 @@ Sale.findByNumeroFactura = (numerofactura) => {
         id,
         cliente_id,
         lote_id,
-        user_id,
         cantidadaves,
         canastas_vacias,
         canastas_llenas,
