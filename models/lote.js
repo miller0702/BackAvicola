@@ -293,9 +293,15 @@ Lote.getReporteLoteFood = (loteId) => {
 
 Lote.getReporteLoteMortality = (loteId) => {
     const sql = `
-    SELECT * FROM MORTALITY M
+    SELECT
+        f.fecha,
+        l.descripcion as lote,
+        f.cantidadhembra,
+        f.cantidadmacho
+    FROM MORTALITY M 
     INNER JOIN LOTE L ON M.lote_id = L.ID
     WHERE L.ID = $1
+    ORDER BY M.fecha ASC
     `;
     return db.any(sql, [loteId]);
 };
