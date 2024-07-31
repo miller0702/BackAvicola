@@ -98,30 +98,39 @@ Food.create = (food) => {
 Food.getTotalFood = () => {
   const sql = `
       SELECT
-          SUM(cantidadhembra) + SUM(cantidadmacho) AS totalfood
-      FROM
-          food;
+        COALESCE( SUM(f.cantidadhembra) + SUM(f.cantidadmacho), 0 )AS totalfood
+      FROM food f
+        JOIN lote l ON f.lote_id = l.id
+      WHERE l.estado = 'activo';
   `;
   return db.oneOrNone(sql);
 };
 
-
 Food.getFoodByDay = () => {
   const sql = `
-       SELECT
-    d.fecha,
-    COALESCE(SUM(food.cantidadmacho), 0) AS totalMachos,
-    COALESCE(SUM(food.cantidadhembra), 0) AS totalHembras
-FROM
-    (
-        SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
-    ) AS d
-LEFT JOIN
-    food ON food.fecha::date = d.fecha
-GROUP BY
-    d.fecha
-ORDER BY
-    d.fecha;
+      WITH lotes_activos AS (
+        SELECT id
+        FROM lote
+        WHERE estado = 'activo'
+      )
+      SELECT
+          d.fecha,
+          COALESCE(SUM(food.cantidadmacho), 0) AS totalMachos,
+          COALESCE(SUM(food.cantidadhembra), 0) AS totalHembras
+      FROM
+          (
+              SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
+          ) AS d
+      LEFT JOIN
+          food ON food.fecha::date = d.fecha
+      LEFT JOIN
+          lotes_activos ON food.lote_id = lotes_activos.id
+      GROUP BY
+          d.fecha
+      HAVING
+          COUNT(lotes_activos.id) > 0
+      ORDER BY
+          d.fecha;
     `;
   return db.manyOrNone(sql);
 };

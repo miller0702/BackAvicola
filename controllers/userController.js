@@ -9,10 +9,8 @@ module.exports = {
   async getAll(req, res, next) {
     try {
       const users = await User.getAll();
-      console.log(`Usuarios: ${users}`);
       return res.status(201).json(users);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener los usuarios",
@@ -39,7 +37,6 @@ module.exports = {
         data: newUser.id,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al registrar el usuario",
@@ -52,11 +49,8 @@ module.exports = {
     try {
       const { email, password } = req.body;
 
-      console.log(`Intentando iniciar sesión con email: ${email}`);
-
       const user = await User.findByEmail(email);
       if (!user) {
-        console.log(`Usuario no encontrado: ${email}`);
         return res.status(401).json({
           success: false,
           message: "El usuario no fue encontrado",
@@ -64,7 +58,6 @@ module.exports = {
       }
 
       if (!user.isActive) {
-        console.log(`Usuario inactivo: ${email}`);
         return res.status(403).json({
           success: false,
           message: "El usuario está inactivo",
@@ -89,20 +82,17 @@ module.exports = {
           session_token: `JWT ${token}`,
         };
 
-        console.log(`Inicio de sesión exitoso para: ${email}`);
         return res.status(200).json({
           success: true,
           data: data,
         });
       } else {
-        console.log(`Contraseña incorrecta para: ${email}`);
         return res.status(401).json({
           success: false,
           message: "La Contraseña es Incorrecta",
         });
       }
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de logeo",
@@ -136,7 +126,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -160,7 +149,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -184,7 +172,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -218,7 +205,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -268,7 +254,6 @@ module.exports = {
 
       stream.end(image.buffer);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar la imagen",
@@ -294,7 +279,6 @@ module.exports = {
         data: updatedUser,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar los datos",
@@ -305,33 +289,31 @@ module.exports = {
 
   async getUserById(req, res, next) {
     const verify = await obtenerDatos(req.headers.authorization);
-  
+
     if (!verify.success) {
       return res.status(401).json(verify);
     }
-  
+
     const email = verify.data.email;
-  
+
     try {
       const user = await User.getByEmail(email);
-  
+
       if (!user) {
         return res.status(404).json({
           success: false,
           message: 'Usuario no encontrado',
         });
       }
-  
-      console.log(`Usuario encontrado: ${user}`);
+
       return res.status(200).json(user);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: 'Error al obtener el usuario',
       });
     }
-  },  
+  },
 
   async updateUser(req, res, next) {
     try {
@@ -353,7 +335,6 @@ module.exports = {
         data: updatedUser,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -364,8 +345,6 @@ module.exports = {
 
   async updateUserStatus(req, res, next) {
     try {
-      console.log(`Parametros de la solicitud: ${JSON.stringify(req.params)}`);
-      console.log(`Cuerpo de la solicitud: ${JSON.stringify(req.body)}`);
 
       const userId = req.params.id;
       const { isActive } = req.body;
@@ -392,7 +371,6 @@ module.exports = {
         data: updatedUser,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al actualizar el estado del usuario",
@@ -426,7 +404,6 @@ module.exports = {
         });
       }
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al eliminar el usuario",
@@ -436,6 +413,7 @@ module.exports = {
   }
 
 };
+
 async function obtenerDatos(tokenRecibido) {
   if (!tokenRecibido || !tokenRecibido.startsWith("JWT ")) {
     return {
@@ -444,7 +422,7 @@ async function obtenerDatos(tokenRecibido) {
     };
   }
 
-  const token = tokenRecibido.substring(4); 
+  const token = tokenRecibido.substring(4);
 
   try {
     const decoded = jwt.verify(token, key.secretOrKey);
@@ -458,7 +436,7 @@ async function obtenerDatos(tokenRecibido) {
     console.error('Error al validar el token:', error);
 
     let errorMessage = 'Error al validar el token';
-    
+
     if (error.name === 'TokenExpiredError') {
       errorMessage = 'Token expirado';
     } else if (error.name === 'JsonWebTokenError') {

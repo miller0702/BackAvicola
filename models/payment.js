@@ -110,9 +110,11 @@ Payment.findByNumeroFactura = (numerofactura) => {
 Payment.getTotalPayment = () => {
     const sql = `
     SELECT 
-        SUM(valor) AS TOTAL_PAYMENTS
+        COALESCE( SUM(p.valor) , 0) AS TOTAL_PAYMENTS
     FROM 
-        payments
+        payments p
+    INNER JOIN lote l on p.lote_id = l.id
+    WHERE l.estado = 'activo'
     `;
     return db.oneOrNone(sql);
 };
@@ -195,7 +197,5 @@ Payment.getDeudaActual = async (clienteId, fechaActual) => {
     const result = await db.oneOrNone(query, [clienteId]);
     return result ? result : { deuda_actual: 0, deuda_antigua: 0 };
 };
-
-
 
 module.exports = Payment;

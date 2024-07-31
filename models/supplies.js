@@ -88,9 +88,11 @@ Supplies.update = async (supplies) => {
 Supplies.getTotalSupplies = () => {
   const sql = `
     SELECT
-        SUM(preciocompra) AS totalcompras
+        COALESCE(SUM(s.preciocompra),0) AS totalcompras
     FROM
-        supplies;
+        supplies s
+    INNER JOIN lote l on s.lote_id = l.id
+    WHERE l.estado = 'activo';
     `;
   return db.oneOrNone(sql);
 };

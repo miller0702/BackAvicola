@@ -1,14 +1,12 @@
 const Mortality = require("../models/mortality");
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
-      console.log('hola')
       const data = await Mortality.getAll();
-      console.log(`Mortalidad`, data);
       return res.status(201).json(data);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener la Mortalidad",
@@ -27,7 +25,6 @@ module.exports = {
         data: data.id,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al Registrar la Mortalidad",
@@ -53,7 +50,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -79,7 +75,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -106,7 +101,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al actualizar la mortalidad",
@@ -125,7 +119,6 @@ module.exports = {
         message: "La mortalidad se ha eliminado con éxito",
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al eliminar la mortalidad",
@@ -148,7 +141,6 @@ module.exports = {
 
       return res.status(200).json(mortality);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener la mortalidad por ID",
@@ -161,10 +153,8 @@ module.exports = {
     try {
       const totalMortalityResult = await Mortality.getTotalMortality();
       const totalMortality = totalMortalityResult.totalmortality ? parseInt(totalMortalityResult.totalmortality, 10) : 0;
-      console.log(`Total de Mortalidad: ${totalMortality}`);
       return res.status(200).json({ totalMortality: totalMortality });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener el total de mortalidad",
@@ -176,10 +166,8 @@ module.exports = {
   async getMortalitiesByDay(req, res, next) {
     try {
       const mortalitiesByDay = await Mortality.getMortalitiesByDay();
-      console.log(`Mortalidades por día: ${mortalitiesByDay}`);
       return res.status(200).json(mortalitiesByDay);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener las mortalidades por día",
@@ -187,4 +175,5 @@ module.exports = {
       });
     }
   },
+  
 };

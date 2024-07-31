@@ -19,21 +19,26 @@ const logoBase64 = fs.readFileSync(logoPath).toString('base64');
 
 const headerImagePath = path.join(__dirname, '../public/images/header.png');
 const footerImagePath = path.join(__dirname, '../public/images/footer.png');
+const headerHorizontalImagePath = path.join(__dirname, '../public/images/header_h.png');
+const footerHorizontalImagePath = path.join(__dirname, '../public/images/footer_h.png');
 
 const headerImageBase64 = `data:image/png;base64,${fs.readFileSync(headerImagePath).toString('base64')}`;
 const footerImageBase64 = `data:image/png;base64,${fs.readFileSync(footerImagePath).toString('base64')}`;
+const headerHorizontalImageBase64 = `data:image/png;base64,${fs.readFileSync(headerHorizontalImagePath).toString('base64')}`;
+const footerHorizontalImageBase64 = `data:image/png;base64,${fs.readFileSync(footerHorizontalImagePath).toString('base64')}`;
 
 
 function formatearPrecio(precio) {
   const numeroPrecio = Number(precio);
 
   if (!isNaN(numeroPrecio) && isFinite(numeroPrecio)) {
-    return numeroPrecio.toLocaleString('es-CO', { style: 'currency', currency: 'COP', });
+    const precioRedondeado = numeroPrecio.toFixed(0);
+    return Number(precioRedondeado).toLocaleString('es-CO', { style: 'currency', currency: 'COP' });
   } else {
-    console.log(`Error: ${precio} no es un número válido.`);
     return 'Precio no válido';
   }
 }
+
 
 function formatearFecha(fecha) {
   if (!fecha) return 'Fecha no válida';
@@ -52,17 +57,28 @@ function formatearFecha(fecha) {
 }
 
 module.exports = {
-  
+
   async getAll(req, res, next) {
     try {
       const lotes = await Lote.getAll();
-      console.log(`Lotes:`, lotes);
       return res.status(200).json(lotes);
     } catch (error) {
-      console.error(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener los lotes de aves",
+        error: error.message,
+      });
+    }
+  },
+
+  async getAllActive(req, res, next) {
+    try {
+      const lotes = await Lote.getAllActive();
+      return res.status(200).json(lotes);
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error al obtener los lotes de aves activos",
         error: error.message,
       });
     }
@@ -190,6 +206,514 @@ module.exports = {
     }
   },
 
+  async updateEstado(req, res, next) {
+    try {
+      const { id, estado } = req.body;
+
+      if (!['activo', 'inactivo'].includes(estado)) {
+        return res.status(400).json({
+          success: false,
+          message: "Estado inválido. Debe ser 'activo' o 'inactivo'.",
+        });
+      }
+
+      await Lote.updateEstado(id, estado);
+
+      return res.status(200).json({
+        success: true,
+        message: "Estado del lote de aves actualizado exitosamente",
+        data: { id, estado },
+      });
+    } catch (error) {
+      console.error(`Error al actualizar el estado del lote de aves: ${error.message}`);
+      return res.status(500).json({
+        success: false,
+        message: "Error al actualizar el estado del lote de aves",
+        error: error.message,
+      });
+    }
+  },
+
+  async reporteLote(req, res, next) {
+    try {
+      const lotId = req.params.id;
+      const tipoReporte = req.query.tipo;
+
+      const loteData = await Lote.getReporteLote(lotId);
+
+      const { descripcion } = loteData;
+
+      let docDefinition;
+      switch (tipoReporte) {
+
+        case '1':
+          try {
+            const comprasData = await Lote.getReporteLoteBuys(lotId);
+
+            const precioTotal = comprasData.reduce((acc, compra) => {
+              return acc + parseFloat(compra.valor_con_flete);
+            }, 0);
+
+            const totalBultos = comprasData.reduce((acc, compra) => {
+              return acc + parseFloat(compra.cantidad_bultos);
+            }, 0);
+
+            if (!comprasData) {
+              return res.status(404).json({
+                success: false,
+                message: "No se encontraron datos de compras para el lote",
+              });
+            }
+
+            docDefinition = {
+              pageMargins: [20, 60, 30, 60],
+              pageOrientation: 'landscape',
+              header: {
+                image: headerHorizontalImageBase64,
+                width: 842,
+                height: 50,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              },
+              footer: function (currentPage, pageCount) {
+                return {
+                  image: footerHorizontalImageBase64,
+                  width: 842,
+                  height: 50,
+                  alignment: 'center',
+                  margin: [0, 15, 0, 0],
+                };
+              },
+
+              content: [
+                {
+                  columns: [
+                    {
+                      stack: [
+                        {
+                          text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                          style: 'header'
+                        },
+                        {
+                          text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                          style: 'descripcionText'
+                        },
+                      ]
+                    },
+                    {
+                      image: `data:image/png;base64,${logoBase64}`,
+                      width: 100,
+                      alignment: 'right',
+                      margin: [0, 0, 0, 0]
+                    }
+                  ]
+                },
+                {
+                  text: 'Reporte de Compras de Alimento',
+                  style: 'header'
+                },
+                {
+                  columns: [
+                    {
+                      stack: [
+                        { text: `${descripcion}`, style: 'subheader' },
+                        {
+                          text: `Fecha: ${formatearFecha(new Date())}`,
+                          style: 'fechaExpedicion',
+                        }
+                      ]
+                    },
+                    {
+                      stack: [
+                        {
+                          text: `VALOR TOTAL: ${formatearPrecio(precioTotal)}`, style: 'subheader'
+                        },
+                        {
+                          text: `TOTAL BULTOS: ${totalBultos}`, style: 'subheader'
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  table: {
+                    widths: [65, 120, '*', 60, '*', '*', '*', '*'],
+                    body: [
+                      [
+                        { text: 'Fecha', style: 'tableHeader' },
+                        { text: 'Tipo', style: 'tableHeader' },
+                        { text: 'Procedencia', style: 'tableHeader' },
+                        { text: 'Cantidad', style: 'tableHeader' },
+                        { text: 'Valor Unidad', style: 'tableHeader' },
+                        { text: 'Valor Bultos', style: 'tableHeader' },
+                        { text: 'Valor Flete', style: 'tableHeader' },
+                        { text: 'Total', style: 'tableHeader' }
+                      ],
+                      ...comprasData.map(compra => [
+                        formatearFecha(new Date(compra.fecha)),
+                        compra.tipo_purina || 'N/A',
+                        compra.procedencia || 'N/A',
+                        compra.cantidad_bultos ? compra.cantidad_bultos.toString() : 'N/A',
+                        formatearPrecio(Number(compra.valor_unitario).toFixed(0) || 0),
+                        formatearPrecio(Number(compra.valor_bultos).toFixed(0) || 0),
+                        formatearPrecio(Number(compra.valor_flete).toFixed(0) || 0),
+                        formatearPrecio(Number(compra.valor_con_flete).toFixed(0) || 0)
+                      ])
+                    ]
+                  },
+                  layout: {
+                    hLineWidth: () => 0,
+                    vLineWidth: () => 0,
+                    paddingLeft: () => 8,
+                    paddingRight: () => 8,
+                    paddingTop: () => 4,
+                    paddingBottom: () => 4,
+                    fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                  },
+                },
+              ],
+              styles: {
+                header: {
+                  fontSize: 22,
+                  color: "#ff9900",
+                  bold: true,
+                  alignment: 'left',
+                  margin: [0, 10, 0, 10]
+                },
+                fechaExpedicion: {
+                  fontSize: 12,
+                  color: "#666",
+                  italics: true,
+                  margin: [0, 0, 0, 15]
+                },
+                tableHeader: {
+                  bold: true,
+                  fontSize: 12,
+                  color: 'black'
+                },
+              }
+            };
+          } catch (error) {
+            console.error("Error al generar el reporte:", error);
+            return res.status(500).json({
+              success: false,
+              message: "Error al obtener el reporte",
+              error: error.message || error
+            });
+          }
+          break;
+
+        case '2':
+          const alimentoData = await Lote.getReporteLoteFood(lotId);
+
+          const totalConsumidoHembra = alimentoData.reduce((acc, alimento) => {
+            return acc + parseFloat(alimento.cantidadhembra);
+          }, 0);
+
+          const totalConsumidoMacho = alimentoData.reduce((acc, alimento) => {
+            return acc + parseFloat(alimento.cantidadmacho);
+          }, 0);
+
+          const totalConsumido = totalConsumidoHembra + totalConsumidoMacho || 0;
+
+          if (!alimentoData) {
+            return res.status(404).json({
+              success: false,
+              message: "No se encontraron datos de alimento para el lote",
+            });
+          }
+
+          docDefinition = {
+            pageMargins: [30, 80, 30, 100],
+            header: function (currentPage, pageCount, pageSize) {
+              return {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              };
+            },
+            footer: function (currentPage, pageCount, pageSize) {
+              return {
+                image: footerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 20, 0, 0]
+              };
+            },
+            content: [
+              {
+                columns: [
+                  {
+                    stack: [
+                      {
+                        text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                        style: 'header'
+                      },
+                      {
+                        text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                        style: 'descripcionText'
+                      },
+                    ]
+                  },
+                  {
+                    image: `data:image/png;base64,${logoBase64}`,
+                    width: 100,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 0]
+                  }
+                ]
+              },
+              {
+                text: 'Reporte de Alimento Consumido por las Aves',
+                style: 'header'
+              },
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `${descripcion}`, style: 'subheader' },
+                      {
+                        text: `Fecha: ${formatearFecha(new Date())}`,
+                        style: 'fechaExpedicion',
+                      }
+                    ]
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `TOTAL BULTOS CONSUMIDOS: ${totalConsumido}`, style: 'subheader'
+                      },
+                    ]
+                  }
+                ]
+              },
+              {
+                table: {
+                  widths: ['*', '*', '*'],
+                  body: [
+                    [
+                      { text: 'Fecha', style: 'tableHeader' },
+                      { text: 'Cantidad Hembras', style: 'tableHeader' },
+                      { text: 'Cantidad Machos', style: 'tableHeader' },
+                    ],
+                    ...alimentoData.map(alimento => [
+                      formatearFecha(new Date(alimento.fecha)),
+                      alimento.cantidadhembra ? `${alimento.cantidadhembra.toString()} bultos` : '0 Bultos',
+                      alimento.cantidadmacho ? `${alimento.cantidadmacho.toString()} bultos` : '0 Bultos',
+                    ]),
+                    [
+                      { text: 'Totales', style: 'tableHeader', bold: true },
+                      { text: `${totalConsumidoHembra} bultos`, style: 'tableHeader' },
+                      { text: `${totalConsumidoMacho} bultos`, style: 'tableHeader' },
+                    ]
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0,
+                  vLineWidth: () => 0,
+                  paddingLeft: () => 8,
+                  paddingRight: () => 8,
+                  paddingTop: () => 4,
+                  paddingBottom: () => 4,
+                  fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                },
+              },
+            ],
+
+            styles: {
+              header: {
+                fontSize: 22,
+                color: "#ff9900",
+                bold: true,
+                alignment: 'left',
+                margin: [0, 10, 0, 10]
+              },
+              fechaExpedicion: {
+                fontSize: 12,
+                color: "#666",
+                italics: true,
+                margin: [0, 0, 0, 15]
+              },
+              tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black'
+              }
+            }
+          };
+
+          break;
+
+        case '3':
+          const mortalidadData = await Lote.getReporteLoteMortality(lotId);
+
+          const totalMortalidadHembra = mortalidadData.reduce((acc, mortalidad) => {
+            return acc + parseFloat(mortalidad.cantidadhembra);
+          }, 0);
+
+          const totalMortalidadMacho = mortalidadData.reduce((acc, mortalidad) => {
+            return acc + parseFloat(mortalidad.cantidadmacho);
+          }, 0);
+
+          const totalMortalidad = totalMortalidadHembra + totalMortalidadMacho || 0;
+
+          if (!mortalidadData) {
+            return res.status(404).json({
+              success: false,
+              message: "No se encontraron datos de mortalidad para el lote",
+            });
+          }
+          docDefinition = {
+            pageMargins: [30, 80, 30, 100],
+            header: function (currentPage, pageCount, pageSize) {
+              return {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              };
+            },
+            footer: function (currentPage, pageCount, pageSize) {
+              return {
+                image: footerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 20, 0, 0]
+              };
+            },
+            content: [
+              {
+                columns: [
+                  {
+                    stack: [
+                      {
+                        text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                        style: 'header'
+                      },
+                      {
+                        text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                        style: 'descripcionText'
+                      },
+                    ]
+                  },
+                  {
+                    image: `data:image/png;base64,${logoBase64}`,
+                    width: 100,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 0]
+                  }
+                ]
+              },
+              {
+                text: 'Reporte de Mortalidad de las Aves',
+                style: 'header'
+              },
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `${descripcion}`, style: 'subheader' },
+                      {
+                        text: `Fecha: ${formatearFecha(new Date())}`,
+                        style: 'fechaExpedicion',
+                      }
+                    ]
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `TOTAL AVES MUERTAS: ${totalMortalidad}`, style: 'subheader'
+                      },
+                    ]
+                  }
+                ]
+              },
+              {
+                table: {
+                  widths: ['*', '*', '*'],
+                  body: [
+                    [
+                      { text: 'Fecha', style: 'tableHeader' },
+                      { text: 'Cantidad Hembras', style: 'tableHeader' },
+                      { text: 'Cantidad Machos', style: 'tableHeader' },
+                    ],
+                    ...mortalidadData.map(mortalidad => [
+                      formatearFecha(new Date(mortalidad.fecha)),
+                      mortalidad.cantidadhembra ? `${mortalidad.cantidadhembra.toString()} aves` : '0 Aves',
+                      mortalidad.cantidadmacho ? `${mortalidad.cantidadmacho.toString()} aves` : '0 Aves',
+                    ]),
+                    [
+                      { text: 'Totales', style: 'tableHeader', bold: true },
+                      { text: `${totalMortalidadHembra} aves`, style: 'tableHeader' },
+                      { text: `${totalMortalidadMacho} aves`, style: 'tableHeader' },
+                    ]
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0,
+                  vLineWidth: () => 0,
+                  paddingLeft: () => 8,
+                  paddingRight: () => 8,
+                  paddingTop: () => 4,
+                  paddingBottom: () => 4,
+                  fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                },
+              },
+            ],
+
+            styles: {
+              header: {
+                fontSize: 22,
+                color: "#ff9900",
+                bold: true,
+                alignment: 'left',
+                margin: [0, 10, 0, 10]
+              },
+              fechaExpedicion: {
+                fontSize: 12,
+                color: "#666",
+                italics: true,
+                margin: [0, 0, 0, 15]
+              },
+              tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black'
+              }
+            }
+          };
+
+
+          break;
+
+        default:
+          return res.status(400).json({
+            success: false,
+            message: "Tipo de reporte no válido",
+          });
+      }
+
+      const pdfDoc = printer.createPdfKitDocument(docDefinition);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename=factura_${lotId}.pdf`);
+      pdfDoc.pipe(res);
+      pdfDoc.end();
+
+    } catch (error) {
+      console.error("Error al generar el PDF:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error al generar el reporte PDF",
+        error: error.message || error
+      });
+    }
+  },
+
   async reporteGeneralLote(req, res, next) {
     try {
       const lotId = req.params.id;
@@ -238,7 +762,7 @@ module.exports = {
       const gastosNum = parseFloat(gastos) || 0;
 
       valorBulto = 40;
-      // Asegúrate de que los valores sean correctos
+
       const avesFinales = avesNum - totalVendidas - totalMortalidadNum;
       const promedioKg = totalVendidas !== 0 ? (totalKilosNum / totalVendidas) : 0;
       const avesReal = totalMortalidadNum + totalVendidas;
@@ -246,8 +770,14 @@ module.exports = {
       const precioAve = totalVendidas !== 0 ? (totalVentasNum / totalVendidas) : 0;
       const consumoAve = avesNum !== 0 ? ((totalComprasAlimentoNum * valorBulto) / avesNum) : 0;
       const valorUnaAve = totalComprasNum !== 0 ? (((totalBultos / totalComprasNum) / valorBulto) * consumoAve) : 0;
+      const arrendamiento = gananciasNum * 0.08;
+      const administracion = 4970000;
+      const gananciasRep = gananciasNum - arrendamiento - administracion;
+      const gananciasMiller = gananciasRep * 0.75;
+      const gananciasLeo = gananciasRep * 0.25;
 
       const docDefinition = {
+        pageMargins: [30, 80, 30, 100],
         header: {
           image: headerImageBase64,
           width: 595,
@@ -261,16 +791,10 @@ module.exports = {
             width: 595,
             height: 80,
             alignment: 'center',
-            margin: [0, -30, 0, 0],
+            margin: [0, 20, 0, 0],
           };
         },
         content: [
-          {
-            canvas: [
-              { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
-            ],
-            margin: [0, 30, 0, 10]
-          },
           {
             columns: [
               {
@@ -289,7 +813,7 @@ module.exports = {
                 image: `data:image/png;base64,${logoBase64}`,
                 width: 100,
                 alignment: 'right',
-                margin: [0, 0, 0, 20]
+                margin: [0, 0, 0, 10]
               }
             ]
           },
@@ -298,7 +822,7 @@ module.exports = {
             style: 'header'
           },
           {
-            text: `Lote: ${descripcion}`,
+            text: `${descripcion}`,
             style: 'subheader'
           },
           {
@@ -327,12 +851,12 @@ module.exports = {
                 ],
                 [
                   { text: `Total Alimento Consumido: ${totalConsumoAlimentoNum}`, style: 'tableHeader' },
-                  { text: `Precio por Ave: ${precioAve.toFixed(2)}`, style: 'tableHeader' },
+                  { text: `Precio por Ave: ${formatearPrecio(precioAve)}`, style: 'tableHeader' },
                 ],
-                [
-                  { text: `Alimento Consumido por Ave: ${consumoAve.toFixed(2)}`, style: 'tableHeader' },
-                  { text: `Valor de un Ave: ${valorUnaAve.toFixed(2)}`, style: 'tableHeader' },
-                ]
+                // [
+                //   { text: `Alimento Consumido por Ave: ${consumoAve.toFixed(2)}`, style: 'tableHeader' },
+                //   { text: `Valor de un Ave: ${valorUnaAve.toFixed(2)}`, style: 'tableHeader' },
+                // ]
               ]
             },
             layout: {
@@ -361,10 +885,10 @@ module.exports = {
                   { text: 'Total Ventas', style: 'tableHeader' },
                   formatearPrecio(totalVentasNum)
                 ],
-                [
-                  { text: 'Total Kilos', style: 'tableHeader' },
-                  formatearPrecio(totalKilosNum)
-                ],
+                // [
+                //   { text: 'Total Kilos', style: 'tableHeader' },
+                //   totalKilosNum
+                // ],
                 [
                   { text: 'Total Compras de Insumos', style: 'tableHeader' },
                   formatearPrecio(totalComprasInsumosNum)
@@ -374,21 +898,33 @@ module.exports = {
                   formatearPrecio(totalComprasAlimentoNum)
                 ],
                 [
-                  { text: 'Total Consumo de Alimento', style: 'tableHeader' },
-                  formatearPrecio(totalConsumoAlimentoNum)
-                ],
-                [
                   { text: 'Costo Total del Lote', style: 'tableHeader' },
                   formatearPrecio(costoTotalLoteNum)
                 ],
                 [
-                  { text: 'Ganancia del Lote', style: 'tableHeader' },
+                  { text: 'Gastos Totales del Lote', style: 'tableHeader' },
+                  formatearPrecio(gastosNum)
+                ],
+                [
+                  { text: 'Ganancia Bruta del Lote', style: 'tableHeader' },
                   formatearPrecio(gananciasNum)
                 ],
                 [
-                  { text: 'Gastos del Lote', style: 'tableHeader' },
-                  formatearPrecio(gastosNum)
-                ]
+                  { text: 'Pago Arrendamiento', style: 'tableHeader' },
+                  formatearPrecio(arrendamiento)
+                ],
+                [
+                  { text: 'Pago Administración', style: 'tableHeader' },
+                  formatearPrecio(administracion)
+                ],
+                [
+                  { text: 'Ganancias Miller 75%', style: 'tableHeader' },
+                  formatearPrecio(gananciasMiller)
+                ],
+                [
+                  { text: 'Ganancias Leonardo 25%', style: 'tableHeader' },
+                  formatearPrecio(gananciasLeo)
+                ],
               ]
             },
             layout: {
@@ -453,7 +989,6 @@ module.exports = {
       pdfDoc.end();
 
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener la factura por ID",
@@ -466,10 +1001,8 @@ module.exports = {
     try {
       const totalLoteResult = await Lote.getTotalLote();
       const totalLote = totalLoteResult.totallote ? parseInt(totalLoteResult.totallote, 10) : 0;
-      console.log(`Total de Lotes: ${totalLote}`);
       return res.status(200).json({ totalLote: totalLote });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener el total de alimento",

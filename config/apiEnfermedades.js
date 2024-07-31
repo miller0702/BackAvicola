@@ -1,5 +1,5 @@
 {
-    "enfermedadesAvesCorral": [
+    "enfermedadesAvesCorral" [
       {
         "nombre": "Gripe Aviar",
         "sintomas": ["fiebre", "tos", "dificultad para respirar"],

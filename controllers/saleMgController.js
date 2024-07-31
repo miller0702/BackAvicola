@@ -1,13 +1,12 @@
 const Sale = require("../models/saleMg");
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
       const data = await Sale.getAll();
-      console.log(`Factura: ${data}`);
       return res.status(200).json(data);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener las facturas",
@@ -27,7 +26,6 @@ module.exports = {
         data: data.id,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al registrar la factura",
@@ -48,7 +46,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al actualizar la factura",
@@ -67,7 +64,6 @@ module.exports = {
         message: "La factura se ha eliminado con éxito",
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al eliminar la factura",
@@ -90,7 +86,6 @@ module.exports = {
 
       return res.status(200).json(sale);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener la factura por ID",
@@ -113,7 +108,6 @@ module.exports = {
 
       return res.status(200).json(sale);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener la factura por número",
@@ -121,4 +115,5 @@ module.exports = {
       });
     }
   },
+  
 };

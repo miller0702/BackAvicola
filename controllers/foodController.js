@@ -1,13 +1,12 @@
 const Food = require("../models/food");
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
       const data = await Food.getAll();
-      console.log(`Alimento:`, data);
       return res.status(201).json(data);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener el Alimento",
@@ -26,7 +25,6 @@ module.exports = {
         data: data.id,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al Registrar el alimento",
@@ -52,7 +50,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -78,7 +75,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al momento de actualizar",
@@ -105,7 +101,6 @@ module.exports = {
         data: data,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al actualizar la alimento",
@@ -124,7 +119,6 @@ module.exports = {
         message: "La alimento se ha eliminado con éxito",
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al eliminar la alimento",
@@ -147,7 +141,6 @@ module.exports = {
 
       return res.status(200).json(food);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener la alimento por ID",
@@ -160,10 +153,8 @@ module.exports = {
     try {
       const totalFoodResult = await Food.getTotalFood();
       const totalFood = totalFoodResult.totalfood ? parseInt(totalFoodResult.totalfood, 10) : 0;
-      console.log(`Total de Alimento: ${totalFood}`);
       return res.status(200).json({ totalFood: totalFood });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener el total de alimento",
@@ -171,13 +162,12 @@ module.exports = {
       });
     }
   },
+  
   async getFoodByDay(req, res, next) {
     try {
       const foodByDay = await Food.getFoodByDay();
-      console.log(`Mortalidades por día: ${foodByDay}`);
       return res.status(200).json(foodByDay);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener las mortalidades por día",
@@ -185,4 +175,5 @@ module.exports = {
       });
     }
   },
+  
 };

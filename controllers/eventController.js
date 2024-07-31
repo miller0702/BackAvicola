@@ -1,11 +1,11 @@
 const Event = require('../models/event');
 
 module.exports = {
+  
   async getAll(req, res, next) {
     try {
       const events = await Event.getAll();
       return res.status(200).json(events);
-      console.log(events)
     } catch (error) {
       console.error(`Error: ${error}`);
       return res.status(500).json({ success: false, message: "Error al obtener eventos" });

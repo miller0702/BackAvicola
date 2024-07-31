@@ -1,12 +1,12 @@
 const Supplies = require("../models/supplies");
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
       const data = await Supplies.getAll();
       return res.status(200).json(data);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener los insumos",
@@ -25,7 +25,6 @@ module.exports = {
         data: data.id,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al registrar el insumo",
@@ -54,7 +53,6 @@ module.exports = {
         data: updatedSupplies,
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al actualizar el insumo",
@@ -73,7 +71,6 @@ module.exports = {
         message: "El insumo se ha eliminado con éxito",
       });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al eliminar el insumo",
@@ -96,7 +93,6 @@ module.exports = {
 
       return res.status(200).json(supplies);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener el insumo por ID",
@@ -110,7 +106,6 @@ module.exports = {
       const totalSupplies = await Supplies.getTotalSupplies();
       return res.status(200).json(totalSupplies);
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener el total de insumos",

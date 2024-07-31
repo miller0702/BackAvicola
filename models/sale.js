@@ -121,42 +121,71 @@ Sale.findByNumeroFactura = (numerofactura) => {
 
 Sale.getTotalSale = () => {
     const sql = `
+    WITH lotes_activos AS (
+        SELECT id
+        FROM lote
+        WHERE estado = 'activo'
+    )
     SELECT
-    SUM(
-        ((
-            (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado) -
-            (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado)
-        ) * preciokilo)
-    ) AS total_sales
-    FROM sales;
+        COALESCE(
+            SUM(
+                (
+                    (SELECT COALESCE(SUM(llenado), 0) FROM UNNEST(canastas_llenas) AS llenado) -
+                    (SELECT COALESCE(SUM(vaciado), 0) FROM UNNEST(canastas_vacias) AS vaciado)
+                ) * preciokilo
+            ),
+            0
+        ) AS total_sales
+    FROM sales
+    WHERE lote_id IN (SELECT id FROM lotes_activos);
+
     `;
     return db.oneOrNone(sql);
 };
 
 Sale.getTotales = () => {
     const sql = `
+    WITH lotes_activos AS (
+        SELECT id
+        FROM lote
+        WHERE estado = 'activo'
+    ),
+    supplies_total AS (
+        SELECT 
+            SUM(PRECIOCOMPRA) AS TOTAL_SUPPLIES 
+        FROM SUPPLIES
+    ),
+    buys_total AS (
+        SELECT 
+            COALESCE(SUM(VALOR_CON_FLETE), 0) AS TOTAL_BUYS
+        FROM BUYS
+        WHERE lote_id IN (SELECT id FROM lotes_activos)
+    ),
+    total_lote AS (
+        SELECT 
+            COALESCE(PRECIO, 0) AS PRECIO_LOTE
+        FROM LOTE
+        WHERE id IN (SELECT id FROM lotes_activos)
+    ),
+    sales_total AS (
+        SELECT 
+            SUM(preciokilo * (
+                (SELECT COALESCE(SUM(llenado), 0) FROM UNNEST(canastas_llenas) AS llenado) -
+                (SELECT COALESCE(SUM(vaciado), 0) FROM UNNEST(canastas_vacias) AS vaciado)
+            )) AS TOTAL_SALES
+        FROM sales
+        WHERE lote_id IN (SELECT id FROM lotes_activos)
+    )
     SELECT 
-    SUPPLIES_TOTAL.TOTAL_SUPPLIES,
-    BUYS_TOTAL.TOTAL_BUYS,
-	TOTAL_LOTE.PRECIO_LOTE,
-    SALES_TOTAL.TOTAL_SALES
+        COALESCE(supplies_total.TOTAL_SUPPLIES, 0) AS TOTAL_SUPPLIES,
+        COALESCE(buys_total.TOTAL_BUYS, 0) AS TOTAL_BUYS,
+        COALESCE(total_lote.PRECIO_LOTE, 0) AS PRECIO_LOTE,
+        COALESCE(sales_total.TOTAL_SALES, 0) AS TOTAL_SALES
     FROM 
-    (SELECT SUM(PRECIOCOMPRA) AS TOTAL_SUPPLIES 
-     FROM SUPPLIES
-    ) AS SUPPLIES_TOTAL,
-	 (SELECT PRECIO AS PRECIO_LOTE
-     FROM LOTE
-    ) AS TOTAL_LOTE,
-    (SELECT SUM(VALOR_CON_FLETE) AS TOTAL_BUYS 
-     FROM BUYS
-    ) AS BUYS_TOTAL,
-    (SELECT 
-        SUM(preciokilo * (
-            (SELECT COALESCE(SUM(llenado), 0) FROM UNNEST(canastas_llenas) AS llenado) -
-            (SELECT COALESCE(SUM(vaciado), 0) FROM UNNEST(canastas_vacias) AS vaciado)
-        )) AS TOTAL_SALES
-     FROM sales
-    ) AS SALES_TOTAL;
+        supplies_total,
+        buys_total,
+        total_lote,
+        sales_total;
     `;
     return db.oneOrNone(sql);
 };
@@ -182,48 +211,73 @@ Sale.getVentasPorMes = async () => {
 
 Sale.getSaleForDay = async () => {
     const sql = `
-    WITH ventas_expandidas AS (
-    SELECT
-        fecha,
-        preciokilo,
-        cantidadaves,
-        -- Calcula la diferencia entre canastas llenas y vacías
-        COALESCE(
-            (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado) -
-            (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado),
-            0
-        ) AS diferencia_canastas
-    FROM sales
+    WITH lotes_activos AS (
+        SELECT id
+        FROM lote
+        WHERE estado = 'activo'
+    ),
+    ventas_filtradas AS (
+        SELECT
+            fecha,
+            preciokilo,
+            cantidadaves,
+            -- Calcula la diferencia entre canastas llenas y vacías
+            COALESCE(
+                (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado) -
+                (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado),
+                0
+            ) AS diferencia_canastas
+        FROM sales
+        WHERE lote_id IN (SELECT id FROM lotes_activos)
     )
     SELECT
         TO_CHAR(fecha, 'YYYY-MM-DD') AS dia,
         SUM(preciokilo * diferencia_canastas) AS total_ventas,
         SUM(cantidadaves) AS total_cantidad_aves
-    FROM ventas_expandidas
+    FROM ventas_filtradas
     GROUP BY fecha
     ORDER BY dia;
+
     `;
     return db.any(sql);
 };
 
 Sale.getSaleForDayCustomer = async () => {
     const sql = `
-      SELECT 
-          S.cliente_id,
-          S.cantidadaves,
-          TO_CHAR(S.fecha, 'YYYY-MM-DD') AS dia,
-          SUM(S.preciokilo * (
-              (SELECT SUM(llenado) FROM UNNEST(S.canastas_llenas) AS llenado) -
-              (SELECT SUM(vaciado) FROM UNNEST(S.canastas_vacias) AS vaciado)
-          )) AS total_compras
-      FROM 
-          sales S
-      GROUP BY 
-          S.cliente_id, S.fecha, S.cantidadaves
-      ORDER BY 
-          S.fecha;
+        WITH lotes_activos AS (
+            SELECT id
+            FROM lote
+            WHERE estado = 'activo'
+        ),
+        ventas_filtradas AS (
+            SELECT
+                S.cliente_id,
+                S.cantidadaves,
+                S.fecha,
+                S.preciokilo,
+                S.canastas_llenas,
+                S.canastas_vacias
+            FROM
+                sales S
+            JOIN
+                lotes_activos L ON S.lote_id = L.id
+        )
+        SELECT 
+            V.cliente_id,
+            V.cantidadaves,
+            TO_CHAR(V.fecha, 'YYYY-MM-DD') AS dia,
+            SUM(V.preciokilo * (
+                (SELECT SUM(llenado) FROM UNNEST(V.canastas_llenas) AS llenado) -
+                (SELECT SUM(vaciado) FROM UNNEST(V.canastas_vacias) AS vaciado)
+            )) AS total_compras
+        FROM 
+            ventas_filtradas V
+        GROUP BY 
+            V.cliente_id, V.fecha, V.cantidadaves
+        ORDER BY 
+            V.fecha;
+
     `;
-    console.log(`Ejecutando consulta SQL para todas las ventas por día`);
     return db.any(sql);
 }
 

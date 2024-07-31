@@ -12,11 +12,15 @@ const SuppliersController = require("../controllers/supplierController");
 const LoteController = require("../controllers/loteController");
 const PaymentController = require("../controllers/paymentController");
 const EventController = require('../controllers/eventController');
+const DiseasesController = require("../controllers/diseasesController");
 const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 module.exports = (app) => {
+
+  // Enfermedades de Aves de Corral
+  app.get('/api/diseases/getAll', DiseasesController.getAll);
 
   // Obtener todos los eventos
   app.get('/api/events/getAll', EventController.getAll);
@@ -87,11 +91,14 @@ module.exports = (app) => {
 
   // Lote
   app.get('/api/lote/getAll', LoteController.getAll);
+  app.get('/api/lote/getAllActive', LoteController.getAllActive);
   app.post("/api/lote/register", LoteController.register);
   app.post("/api/lote/getById", LoteController.getById);
   app.delete("/api/lote/delete/:id", LoteController.delete);
   app.put("/api/lote/update/:id", LoteController.update);
+  app.put("/api/lote/status/:id", LoteController.updateEstado);
   app.get('/api/lote/:id/invoice', LoteController.reporteGeneralLote);
+  app.get('/api/lote/:id/reporte', LoteController.reporteLote);
   app.get('/api/lote/getTotalLote', LoteController.getTotalLote);
 
   // Suministros

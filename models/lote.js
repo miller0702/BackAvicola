@@ -1,9 +1,15 @@
 const db = require('../config/configPg.js');
 
+
 const Lote = {};
 
 Lote.getAll = () => {
     const sql = 'SELECT * FROM lote;';
+    return db.manyOrNone(sql);
+};
+
+Lote.getAllActive = () => {
+    const sql = `SELECT * FROM lote where estado = 'activo';`;
     return db.manyOrNone(sql);
 };
 
@@ -15,7 +21,8 @@ Lote.findById = (id) => {
         descripcion,
         cantidad_aves,
         precio,
-        fecha_llegada
+        fecha_llegada,
+        estado
     FROM
         lote
     WHERE
@@ -43,9 +50,10 @@ Lote.update = async (lote) => {
         cantidad_aves = $3,
         precio = $4,
         fecha_llegada = $5,
-        updated_at = $6
+        estado = $6,
+        updated_at = $7
     WHERE
-        id = $7
+        id = $8
     `;
     await db.none(sql, [
         lote.proveedor_id,
@@ -53,6 +61,7 @@ Lote.update = async (lote) => {
         lote.cantidad_aves,
         lote.precio,
         lote.fecha_llegada,
+        lote.estado,
         new Date(),
         lote.id
     ]);
@@ -80,6 +89,27 @@ Lote.updateCantidadAves = (id, cantidad_aves) => {
     return db.none(sql, [cantidad_aves, id]);
 };
 
+Lote.updateEstado = (id, estado) => {
+
+    if (!['activo', 'inactivo'].includes(estado)) {
+        return Promise.reject(new Error("Estado inválido. Debe ser 'activo' o 'inactivo'."));
+    }
+
+    const sql = `
+      UPDATE
+          lote
+      SET
+          estado = $1
+      WHERE
+          id = $2
+    `;
+    return db.none(sql, [estado, id])
+        .catch(error => {
+            console.error(`Error en la actualización del estado en la base de datos: ${error.message}`);
+            throw error;
+        });
+};
+
 Lote.create = (lote) => {
     const sql = `
     INSERT INTO
@@ -89,10 +119,11 @@ Lote.create = (lote) => {
             cantidad_aves,
             precio,
             fecha_llegada,
+            estado,
             created_at,
             updated_at
         )
-    VALUES($1, $2, $3, $4, $5, $6, $7)
+    VALUES($1, $2, $3, $4, $5, $6, $7, $8)
     RETURNING id
     `;
     return db.one(sql, [
@@ -101,6 +132,7 @@ Lote.create = (lote) => {
         lote.cantidad_aves,
         lote.precio,
         lote.fecha_llegada,
+        lote.estado || 'activo',
         new Date(),
         new Date()
     ]);
@@ -109,129 +141,238 @@ Lote.create = (lote) => {
 Lote.getReporteLote = (loteId) => {
     const sql = `
     WITH ventas AS (
+        SELECT 
+            lote_id, 
+            SUM(preciokilo * (
+                COALESCE(
+                    (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
+                ) - 
+                COALESCE(
+                    (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
+                )
+            )) AS total_ventas,
+            SUM(
+                COALESCE(
+                    (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
+                ) - 
+                COALESCE(
+                    (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
+                )
+            ) AS total_kilos
+        FROM 
+            sales
+        GROUP BY 
+            lote_id
+    ),
+    compras_insumos AS (
+        SELECT 
+            lote_id, 
+            SUM(preciocompra) AS total_compras_insumos
+        FROM 
+            supplies
+        GROUP BY 
+            lote_id
+    ),
+    compras_alimento AS (
+        SELECT 
+            lote_id, 
+            COUNT(id) AS total_compras,
+            SUM(valor_con_flete) AS total_compras_alimento
+        FROM 
+            buys
+        GROUP BY 
+            lote_id
+    ),
+    costo_lote AS (
+        SELECT 
+            id AS lote_id, 
+            SUM(precio) AS costo_total_lote
+        FROM 
+            lote
+        GROUP BY 
+            id
+    ),
+    mortalidad AS (
+        SELECT 
+            lote_id, 
+            SUM(cantidadmacho + cantidadhembra) AS total_mortalidad  
+        FROM 
+            mortality 
+        GROUP BY 
+            lote_id
+    ),
+    consumo_alimento AS (
+        SELECT 
+            lote_id, 
+            SUM(cantidadmacho + cantidadhembra) AS total_consumo_alimento  
+        FROM 
+            food 
+        GROUP BY 
+            lote_id
+    )
     SELECT 
-        lote_id, 
-        SUM(preciokilo * (
-            COALESCE(
-                (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
-            ) - 
-            COALESCE(
-                (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
-            )
-        )) AS total_ventas,
-        SUM(
-            COALESCE(
-                (SELECT SUM(llenado) FROM UNNEST(canastas_llenas) AS llenado), 0
-            ) - 
-            COALESCE(
-                (SELECT SUM(vaciado) FROM UNNEST(canastas_vacias) AS vaciado), 0
-            )
-        ) AS total_kilos
+        l.id AS lote_id,
+        l.descripcion AS descripcion,
+        l.cantidad_aves AS aves,
+        COALESCE(ca.total_compras, 0) AS total_compras,
+        COALESCE(v.total_ventas, 0) AS total_ventas,
+        COALESCE(v.total_kilos, 0) AS total_kilos,
+        COALESCE(m.total_mortalidad, 0) AS total_mortalidad,
+        COALESCE(ci.total_compras_insumos, 0) AS total_compras_insumos,
+        COALESCE(ca.total_compras_alimento, 0) AS total_compras_alimento,
+        COALESCE(f.total_consumo_alimento, 0) AS total_consumo_alimento,
+        COALESCE(cl.costo_total_lote, 0) AS costo_total_lote,
+        COALESCE(v.total_ventas, 0) - (COALESCE(ci.total_compras_insumos, 0) + COALESCE(ca.total_compras_alimento, 0) + COALESCE(cl.costo_total_lote, 0)) AS ganancias,
+        COALESCE(ci.total_compras_insumos, 0) + COALESCE(ca.total_compras_alimento, 0) + COALESCE(cl.costo_total_lote, 0) AS gastos
     FROM 
-        sales
-    GROUP BY 
-        lote_id
-),
-compras_insumos AS (
-    SELECT 
-        lote_id, 
-        SUM(preciocompra) AS total_compras_insumos
-    FROM 
-        supplies
-    GROUP BY 
-        lote_id
-),
-compras_alimento AS (
-    SELECT 
-        lote_id, 
-        COUNT(id) AS total_compras,
-        SUM(valor_con_flete) AS total_compras_alimento
-    FROM 
-        buys
-    GROUP BY 
-        lote_id
-),
-costo_lote AS (
-    SELECT 
-        id AS lote_id, 
-        SUM(precio) AS costo_total_lote
-    FROM 
-        lote
-    GROUP BY 
-        id
-),
-mortalidad AS (
-    SELECT 
-        lote_id, 
-        SUM(cantidadmacho + cantidadhembra) AS total_mortalidad  
-    FROM 
-        mortality 
-    GROUP BY 
-        lote_id
-),
-consumo_alimento AS (
-    SELECT 
-        lote_id, 
-        SUM(cantidadmacho + cantidadhembra) AS total_consumo_alimento  
-    FROM 
-        food 
-    GROUP BY 
-        lote_id
-)
-SELECT 
-    l.id AS lote_id,
-    l.descripcion AS descripcion,
-    l.cantidad_aves AS aves,
-    COALESCE(ca.total_compras, 0) AS total_compras,
-    COALESCE(v.total_ventas, 0) AS total_ventas,
-    COALESCE(v.total_kilos, 0) AS total_kilos,
-    COALESCE(m.total_mortalidad, 0) AS total_mortalidad,
-    COALESCE(ci.total_compras_insumos, 0) AS total_compras_insumos,
-    COALESCE(ca.total_compras_alimento, 0) AS total_compras_alimento,
-    COALESCE(f.total_consumo_alimento, 0) AS total_consumo_alimento,
-    COALESCE(cl.costo_total_lote, 0) AS costo_total_lote,
-    COALESCE(v.total_ventas, 0) - (COALESCE(ci.total_compras_insumos, 0) + COALESCE(ca.total_compras_alimento, 0) + COALESCE(cl.costo_total_lote, 0)) AS ganancias,
-    COALESCE(ci.total_compras_insumos, 0) + COALESCE(ca.total_compras_alimento, 0) + COALESCE(cl.costo_total_lote, 0) AS gastos
-FROM 
-    lote l
-LEFT JOIN 
-    ventas v ON l.id = v.lote_id
-LEFT JOIN 
-    compras_insumos ci ON l.id = ci.lote_id
-LEFT JOIN 
-    compras_alimento ca ON l.id = ca.lote_id
-LEFT JOIN 
-    costo_lote cl ON l.id = cl.lote_id
-LEFT JOIN 
-    consumo_alimento f ON l.id = f.lote_id
-LEFT JOIN 
-    mortalidad m ON l.id = m.lote_id
-WHERE 
-    l.id = $1;
+        lote l
+    LEFT JOIN 
+        ventas v ON l.id = v.lote_id
+    LEFT JOIN 
+        compras_insumos ci ON l.id = ci.lote_id
+    LEFT JOIN 
+        compras_alimento ca ON l.id = ca.lote_id
+    LEFT JOIN 
+        costo_lote cl ON l.id = cl.lote_id
+    LEFT JOIN 
+        consumo_alimento f ON l.id = f.lote_id
+    LEFT JOIN 
+        mortalidad m ON l.id = m.lote_id
+    WHERE 
+        l.id = $1;
 
     `;
-    return db.oneOrNone(sql, [loteId]);  // Pasar el parámetro como un array
+    return db.oneOrNone(sql, [loteId]);
 };
 
+Lote.getReporteLoteBuys = (loteId) => {
+    const sql = `
+    SELECT 
+        b.fecha,
+        s.nombre as proveedor,
+        l.descripcion as lote,
+        CASE
+	        WHEN b.procedencia = 'Ocana' THEN 'Ocaña'
+            WHEN b.procedencia = 'Bucaramanga' THEN 'Bucaramanga'
+            ELSE 'Desconocido'
+        END AS procedencia,
+        CASE
+            WHEN b.tipo_purina = 'P' THEN 'Preiniciación'
+            WHEN b.tipo_purina = 'I' THEN 'Iniciación'
+            WHEN b.tipo_purina = 'Q' THEN 'Engorde Quebrantada'
+            WHEN b.tipo_purina = 'E' THEN 'Engorde'
+            ELSE 'Desconocido'
+        END AS tipo_purina,
+        b.cantidad_bultos,
+        b.valor_unitario,
+        b.valor_bultos,
+        b.valor_flete,
+        b.valor_con_flete
+    FROM BUYS B 
+    INNER JOIN LOTE L ON B.lote_id = L.ID
+    INNER JOIN suppliers s on b.proveedor_id = s.id
+    WHERE L.ID = $1
+    `;
+    return db.any(sql, [loteId]);
+};
+
+Lote.getReporteLoteFood = (loteId) => {
+    const sql = `
+    SELECT
+        f.fecha,
+        l.descripcion as lote,
+        f.cantidadhembra,
+        f.cantidadmacho
+    FROM FOOD F 
+    INNER JOIN LOTE L ON F.lote_id = L.ID
+    WHERE L.ID = $1
+    ORDER BY f.fecha ASC
+    `;
+    return db.any(sql, [loteId]);
+};
+
+Lote.getReporteLoteMortality = (loteId) => {
+    const sql = `
+    SELECT * FROM MORTALITY M
+    INNER JOIN LOTE L ON M.lote_id = L.ID
+    WHERE L.ID = $1
+    `;
+    return db.any(sql, [loteId]);
+};
+
+Lote.getReporteLoteSupplies = (loteId) => {
+    const sql = `
+    SELECT * FROM SUPPLIES S
+    INNER JOIN LOTE L ON S.lote_id = L.ID
+    WHERE L.ID = $1
+    `;
+    return db.any(sql, [loteId]);
+};
+
+Lote.getReporteLoteSales = (loteId) => {
+    const sql = `
+    SELECT * FROM SALES S
+    INNER JOIN LOTE L ON S.lote_id = L.ID
+    WHERE L.ID = $1
+    `;
+    return db.any(sql, [loteId]);
+};
+
+Lote.getReporteLotePayments = (loteId) => {
+    const sql = `
+    SELECT * FROM PAYMENTS P
+    INNER JOIN LOTE L ON P.lote_id = L.ID
+    WHERE L.ID = $1
+    `;
+    return db.any(sql, [loteId]);
+};
 
 Lote.getTotalLote = () => {
     const sql = `
+        WITH lotes_activos AS (
+            SELECT id
+            FROM lote
+            WHERE estado = 'activo'
+        ),
+        lote_info AS (
+            SELECT
+                COALESCE(SUM(cantidad_aves), 0) AS totallote
+            FROM
+                lote
+            WHERE id IN (SELECT id FROM lotes_activos)
+        ),
+        sales_info AS (
+            SELECT
+                COALESCE(SUM(cantidadaves), 0) AS vendidas
+            FROM
+                sales
+            WHERE lote_id IN (SELECT id FROM lotes_activos)
+        ),
+        mortality_info AS (
+            SELECT
+                COALESCE(SUM(cantidadmacho + cantidadhembra), 0) AS muertas
+            FROM
+                mortality
+            WHERE lote_id IN (SELECT id FROM lotes_activos)
+        )
         SELECT
-    (COALESCE(totallote, 0) - COALESCE(vendidas, 0) - COALESCE(muertas, 0)) AS totallote
-FROM (
-    SELECT 
-        (SELECT SUM(cantidad_aves) FROM lote WHERE id = '1') AS totallote
-) AS lote_info
-LEFT JOIN (
-    SELECT SUM(cantidadaves) AS vendidas FROM sales WHERE lote_id = '1'
-) AS sales_info ON true
-LEFT JOIN (
-    SELECT SUM(cantidadmacho + cantidadhembra) AS muertas FROM mortality WHERE lote_id = '1'
-) AS mortality_info ON true;;
+            CASE
+                WHEN EXISTS (SELECT 1 FROM lotes_activos) THEN
+                    COALESCE(lote_info.totallote, 0) - COALESCE(sales_info.vendidas, 0) - COALESCE(mortality_info.muertas, 0)
+                ELSE NULL
+            END AS totallote
+        FROM
+            lote_info
+        LEFT JOIN
+            sales_info ON true
+        LEFT JOIN
+            mortality_info ON true
+        WHERE
+            EXISTS (SELECT 1 FROM lotes_activos);
+
     `;
     return db.oneOrNone(sql);
 };
-
 
 module.exports = Lote;
 

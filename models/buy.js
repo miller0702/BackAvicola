@@ -130,9 +130,13 @@ Buys.getTotalBuys = async () => {
   try {
     const sql = `
       SELECT
-          SUM(valor_con_flete) AS totalcompras
+      COALESCE(SUM(b.valor_con_flete), 0) AS totalcompras
       FROM
-          buys;
+          buys b
+      JOIN
+          lote l ON b.lote_id = l.id
+      WHERE
+          l.estado = 'activo';
       `;
     const totalBuys = await db.oneOrNone(sql);
     return totalBuys;

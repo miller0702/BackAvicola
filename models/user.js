@@ -10,7 +10,7 @@ const UserSchema = mongoose.Schema({
   rol: { type: Number, enum: [1, 2, 3], required: true }, // 1=admin, 2=galponero, 3=cliente
   phone: { type: String, required: true },
   sessionToken: { type: String },
-  isActive: { type: Boolean, default: true }, // Campo para estado activo/inactivo
+  isActive: { type: Boolean, default: true },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 });

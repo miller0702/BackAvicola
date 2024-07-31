@@ -32,7 +32,6 @@ function formatearPrecio(precio) {
   if (!isNaN(numeroPrecio) && isFinite(numeroPrecio)) {
     return numeroPrecio.toLocaleString('es-CO', { style: 'currency', currency: 'COP', });
   } else {
-    console.log(`Error: ${precio} no es un número válido.`);
     return 'Precio no válido';
   }
 }
@@ -58,7 +57,6 @@ module.exports = {
   async getAll(req, res, next) {
     try {
       const customers = await Customer.getAll();
-      console.log("Clientes:", customers);
       return res.status(200).json(customers);
     } catch (error) {
       console.error(`Error al obtener clientes: ${error}`);
@@ -73,7 +71,6 @@ module.exports = {
   async getCustomers(req, res, next) {
     try {
         const customers = await Customer.getCustomers();
-        console.log("Clientes:", customers);
         return res.status(200).json(customers);
     } catch (error) {
         console.error(`Error al obtener clientes: ${error}`);
@@ -117,7 +114,6 @@ module.exports = {
         data: updatedCustomer,
       });
     } catch (error) {
-      console.error(`Error al actualizar cliente: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al actualizar el cliente",
@@ -159,7 +155,6 @@ module.exports = {
 
       return res.status(200).json(customer);
     } catch (error) {
-      console.error(`Error al obtener cliente por ID: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener el cliente por ID",
@@ -172,10 +167,8 @@ module.exports = {
     try {
       const totalCustomersResult = await Customer.getTotalCustomers();
       const totalCustomers = totalCustomersResult.totalcustomers ? parseInt(totalCustomersResult.totalcustomers, 10) : 0;
-      console.log(`Total de Clientes:`,totalCustomers);
       return res.status(200).json({ totalCustomers: totalCustomers });
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(501).json({
         success: false,
         message: "Error al obtener el total de clientes",
@@ -206,6 +199,7 @@ module.exports = {
       const deudaInfo = await Payment.getDeudaActual(clienteId, fechaActual);
 
       const docDefinition = {
+        pageMargins: [30, 80, 30, 100],
         header: {
           image: headerImageBase64,
           width: 595,
@@ -219,16 +213,10 @@ module.exports = {
             width: 595,
             height: 80,
             alignment: 'center',
-            margin: [0 ,-30, 0, 0],
+            margin: [0 ,20, 0, 0],
           };
         },
         content: [
-          {
-            canvas: [
-              { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
-            ],
-            margin: [0, 30, 0, 10]
-          },
           {
             columns: [
               {
@@ -292,7 +280,7 @@ module.exports = {
           {
             style: 'tableExample',
             table: {
-              widths: [70, 70, 100, 100, 100],
+              widths: [70, 70, '*', '*', '*'],
               body: [
                 [
                   { text: 'FACTURA', style: 'tableHeader' },
@@ -326,12 +314,6 @@ module.exports = {
               formatearPrecio((precioTotal).toFixed(0))
             ],
             style: 'total'
-          },
-          {
-            canvas: [
-              { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
-            ],
-            margin: [0, 0, 0, 10]
           },
         ],
         styles: {
@@ -396,7 +378,6 @@ module.exports = {
       pdfDoc.end();
 
     } catch (error) {
-      console.log(`Error: ${error}`);
       return res.status(500).json({
         success: false,
         message: "Error al obtener la factura por ID",
@@ -445,6 +426,7 @@ module.exports = {
         const deudaInfo = await Payment.getDeudaActual(clienteId, fechaActual);
 
         const docDefinition = {
+          pageMargins: [30, 80, 30, 100],
             header: {
                 image: headerImageBase64,
                 width: 595,
@@ -458,16 +440,10 @@ module.exports = {
                     width: 595,
                     height: 80,
                     alignment: 'center',
-                    margin: [0, -30, 0, 0],
+                    margin: [0, 20, 0, 0],
                 };
             },
             content: [
-                {
-                    canvas: [
-                        { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
-                    ],
-                    margin: [0, 30, 0, 10]
-                },
                 {
                     columns: [
                         {
@@ -531,7 +507,7 @@ module.exports = {
                 {
                     style: 'tableExample',
                     table: {
-                        widths: [70, 100, 100, 100],
+                        widths: ['*', '*', '*', '*'],
                         body: [
                             [
                                 { text: 'ABONO', style: 'tableHeader' },
@@ -563,12 +539,6 @@ module.exports = {
                         formatearPrecio(cliente.total_abonados)
                     ],
                     style: 'total'
-                },
-                {
-                    canvas: [
-                        { type: 'line', x1: 0, y1: 10, x2: 515, y2: 10, lineWidth: 2, color: '#ff9900' }
-                    ],
-                    margin: [0, 0, 0, 10]
                 },
             ],
             styles: {
@@ -633,7 +603,6 @@ module.exports = {
         pdfDoc.end();
 
     } catch (error) {
-        console.log(`Error: ${error}`);
         return res.status(500).json({
             success: false,
             message: "Error al obtener la factura por ID",

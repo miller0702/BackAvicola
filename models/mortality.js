@@ -20,7 +20,7 @@ Mortality.findById = (id, callback) => {
     WHERE
         id=$1`
     return db.oneOrNone(sql, id).then(mortality => { callback(null, mortality); });
-}
+};
 
 Mortality.delete = async (id) => {
     const sql = `
@@ -97,30 +97,44 @@ Mortality.create = (mortality) => {
 Mortality.getTotalMortality = () => {
     const sql = `
         SELECT
-            SUM(cantidadhembra) + SUM(cantidadmacho) AS totalmortality
-        FROM
-            mortality;
+            COALESCE( SUM(m.cantidadhembra) + SUM(m.cantidadmacho), 0 )AS totalmortality
+        FROM mortality m
+            JOIN lote l ON m.lote_id = l.id
+        WHERE l.estado = 'activo';
     `;
     return db.oneOrNone(sql);
 };
 
 Mortality.getMortalitiesByDay = () => {
     const sql = `
+    WITH lotes_activos AS (
+    SELECT id
+    FROM lote
+    WHERE estado = 'activo'
+    ),
+    mortality_filtrada AS (
+        SELECT
+            *
+        FROM
+            mortality
+        WHERE lote_id IN (SELECT id FROM lotes_activos)
+    )
     SELECT
-    d.fecha,
-    COALESCE(SUM(mortality.cantidadmacho), 0) AS totalMachos,
-    COALESCE(SUM(mortality.cantidadhembra), 0) AS totalHembras
-FROM
-    (
-        SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
-    ) AS d
-LEFT JOIN
-    mortality ON mortality.fecha::date = d.fecha
-GROUP BY
-    d.fecha
-ORDER BY
-    d.fecha;
-
+        d.fecha,
+        COALESCE(SUM(mortality_filtrada.cantidadmacho), 0) AS totalMachos,
+        COALESCE(SUM(mortality_filtrada.cantidadhembra), 0) AS totalHembras
+    FROM
+        (
+            SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
+        ) AS d
+    LEFT JOIN
+        mortality_filtrada ON mortality_filtrada.fecha::date = d.fecha
+    GROUP BY
+        d.fecha
+    HAVING
+        COUNT(mortality_filtrada.cantidadmacho) > 0
+    ORDER BY
+        d.fecha;
 
     `;
     return db.manyOrNone(sql);
