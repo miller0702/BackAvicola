@@ -308,27 +308,60 @@ Lote.getReporteLoteMortality = (loteId) => {
 
 Lote.getReporteLoteSupplies = (loteId) => {
     const sql = `
-    SELECT * FROM SUPPLIES S
+    SELECT 
+        s.fecha,
+        S.descripcioncompra as descripcion,
+        s.preciocompra as valor,
+        l.descripcion as lote,
+        su.nombre as proveedor
+    FROM SUPPLIES S
     INNER JOIN LOTE L ON S.lote_id = L.ID
+    INNER JOIN suppliers su on s.proveedor_id = su.id 
     WHERE L.ID = $1
+    ORDER BY s.fecha ASC
     `;
     return db.any(sql, [loteId]);
 };
 
 Lote.getReporteLoteSales = (loteId) => {
     const sql = `
-    SELECT * FROM SALES S
-    INNER JOIN LOTE L ON S.lote_id = L.ID
-    WHERE L.ID = $1
+    SELECT 
+        s.fecha,
+        s.numerofactura,
+        c.nombre AS cliente,
+        l.descripcion AS lote,
+        s.cantidadaves as aves,
+        s.preciokilo AS precio,
+        COALESCE(
+            (SELECT COALESCE(SUM(llenado),0) FROM UNNEST(s.canastas_llenas) AS llenado) -
+            (SELECT COALESCE(SUM(vaciado),0) FROM UNNEST(s.canastas_vacias) AS vaciado), 0
+        ) AS kilos,
+        s.preciokilo * COALESCE(
+            (SELECT COALESCE(SUM(llenado),0) FROM UNNEST(s.canastas_llenas) AS llenado) -
+            (SELECT COALESCE(SUM(vaciado),0) FROM UNNEST(s.canastas_vacias) AS vaciado), 0
+        ) AS total
+    FROM sales s
+    INNER JOIN customers c ON s.cliente_id = c.id
+    INNER JOIN lote l ON s.lote_id = l.id
+    WHERE l.id = $1
+    ORDER BY s.fecha ASC;
     `;
     return db.any(sql, [loteId]);
 };
 
 Lote.getReporteLotePayments = (loteId) => {
     const sql = `
-    SELECT * FROM PAYMENTS P
-    INNER JOIN LOTE L ON P.lote_id = L.ID
-    WHERE L.ID = $1
+    SELECT
+        p.fecha,
+        c.nombre as cliente,
+        c.telefono as telefono,
+        p.metodo_pago,
+        p.valor
+    FROM payments p
+    INNER JOIN customers c on p.cliente_id = c.id
+    INNER JOIN lote l on p.lote_id = l.id
+    WHERE l.id = $1
+    ORDER BY p.fecha ASC
     `;
     return db.any(sql, [loteId]);
 };
