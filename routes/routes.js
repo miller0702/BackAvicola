@@ -13,6 +13,7 @@ const LoteController = require("../controllers/loteController");
 const PaymentController = require("../controllers/paymentController");
 const EventController = require('../controllers/eventController');
 const DiseasesController = require("../controllers/diseasesController");
+const DiscountController = require("../controllers/discountController");
 const multer = require('multer');
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -117,7 +118,7 @@ module.exports = (app) => {
   app.put("/api/buys/update/:id", BuysController.update);
   app.get('/api/buys/getTotalBuys', BuysController.getTotalBuys);
 
-  // Pagos
+  // Abonos
   app.get("/api/payment/getAll", PaymentController.getAll);
   app.post("/api/payment/register", PaymentController.register);
   app.post("/api/payment/getById", PaymentController.getById);
@@ -125,6 +126,15 @@ module.exports = (app) => {
   app.put("/api/payment/update/:id", PaymentController.update);
   app.get('/api/payment/getTotalSale', PaymentController.getTotalPayment);
   app.get('/api/payment/:id/invoice', PaymentController.generateInvoice);
+
+  // Descuentos
+  app.get("/api/discount/getAll", DiscountController.getAll);
+  app.post("/api/discount/register", DiscountController.register);
+  app.post("/api/discount/getById", DiscountController.getById);
+  app.delete("/api/discount/delete/:id", DiscountController.delete);
+  app.put("/api/discount/update/:id", DiscountController.update);
+  app.get('/api/discount/getTotalSale', DiscountController.getTotalDiscount);
+  app.get('/api/discount/:id/invoice', DiscountController.generateInvoice);
 
   // Ventas Postgres
   app.get("/api/sale/getAll", SaleController.getAll);

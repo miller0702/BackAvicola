@@ -112,6 +112,20 @@ CREATE TABLE payments (
     FOREIGN KEY (lote_id) REFERENCES lote(id)
 );
 
+CREATE TABLE discounts (
+    id SERIAL PRIMARY KEY,
+    cliente_id INTEGER NOT NULL,
+    lote_id INTEGER NOT NULL,
+    valor INTEGER NOT NULL,
+    descripcion VARCHAR(255) NOT NULL,
+    fecha DATE NOT NULL,
+    numerofactura VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id) REFERENCES customers(id),
+    FOREIGN KEY (lote_id) REFERENCES lote(id)
+);
+
 
 
 
