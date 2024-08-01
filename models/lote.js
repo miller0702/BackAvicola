@@ -294,10 +294,10 @@ Lote.getReporteLoteFood = (loteId) => {
 Lote.getReporteLoteMortality = (loteId) => {
     const sql = `
     SELECT
-        f.fecha,
+        M.fecha,
         l.descripcion as lote,
-        f.cantidadhembra,
-        f.cantidadmacho
+        M.cantidadhembra,
+        M.cantidadmacho
     FROM MORTALITY M 
     INNER JOIN LOTE L ON M.lote_id = L.ID
     WHERE L.ID = $1
