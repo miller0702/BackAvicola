@@ -244,7 +244,7 @@ module.exports = {
       const { descripcion } = loteData;
 
       let docDefinition;
-      
+
       let totalVentas;
 
       switch (tipoReporte) {
@@ -829,292 +829,445 @@ module.exports = {
 
 
           break;
-      
+
         case '5':
 
-        const ventaData = await Lote.getReporteLoteSales(lotId);
+          const ventaData = await Lote.getReporteLoteSales(lotId);
 
-        totalVentas = ventaData.reduce((acc, venta) => {
-          return acc + parseFloat(venta.total);
-        }, 0);
+          totalVentas = ventaData.reduce((acc, venta) => {
+            return acc + parseFloat(venta.total);
+          }, 0);
 
-        if (!ventaData) {
-          return res.status(404).json({
-            success: false,
-            message: "No se encontraron datos de ventas para el lote",
-          });
-        }
-        docDefinition = {
-          pageMargins: [30, 80, 30, 100],
-          header: function (currentPage, pageCount, pageSize) {
-            return {
-              image: headerImageBase64,
-              width: 595,
-              height: 80,
-              alignment: 'center',
-              margin: [0, 0, 0, 0]
-            };
-          },
-          footer: function (currentPage, pageCount, pageSize) {
-            return {
-              image: footerImageBase64,
-              width: 595,
-              height: 80,
-              alignment: 'center',
-              margin: [0, 20, 0, 0]
-            };
-          },
-          content: [
-            {
-              columns: [
-                {
-                  stack: [
-                    {
-                      text: 'GRANJA DON RAFA LOTE BERMEJAL',
-                      style: 'header'
-                    },
-                    {
-                      text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
-                      style: 'descripcionText'
-                    },
-                  ]
-                },
-                {
-                  image: `data:image/png;base64,${logoBase64}`,
-                  width: 100,
-                  alignment: 'right',
-                  margin: [0, 0, 0, 0]
-                }
-              ]
+          if (!ventaData) {
+            return res.status(404).json({
+              success: false,
+              message: "No se encontraron datos de ventas para el lote",
+            });
+          }
+          docDefinition = {
+            pageMargins: [30, 80, 30, 100],
+            header: function (currentPage, pageCount, pageSize) {
+              return {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              };
             },
-            {
-              text: 'Reporte de Ventas',
-              style: 'header'
+            footer: function (currentPage, pageCount, pageSize) {
+              return {
+                image: footerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 20, 0, 0]
+              };
             },
-            {
-              columns: [
-                {
-                  stack: [
-                    { text: `${descripcion}`, style: 'subheader' },
-                    {
-                      text: `Fecha: ${formatearFecha(new Date())}`,
-                      style: 'fechaExpedicion',
-                    }
-                  ]
-                },
-                {
-                  stack: [
-                    {
-                      text: `VALOR TOTAL: ${formatearPrecio(totalVentas)}`, style: 'subheader'
-                    },
-                  ]
-                }
-              ]
-            },
-            {
-              table: {
-                body: [
-                  [
-                    { text: 'Fecha', style: 'tableHeader' },
-                    { text: 'Cliente', style: 'tableHeader' },
-                    { text: 'Aves', style: 'tableHeader' },
-                    { text: 'Kilos', style: 'tableHeader' },
-                    { text: 'Precio Kilo', style: 'tableHeader' },
-                    { text: 'Total', style: 'tableHeader' },
-                  ],
-                  ...ventaData.map(venta => [
-                    formatearFecha(new Date(venta.fecha)),
-                    venta.cliente ? `${venta.cliente.toString()}` : 'Desconocido',
-                    venta.aves ? `${venta.aves.toString()}` : 'Desconocido',
-                    venta.kilos ? `${venta.kilos.toString()}` : 'Desconocido',
-                    formatearPrecio(Number(venta.precio).toFixed(0) || 0),
-                    formatearPrecio(Number(venta.total).toFixed(0) || 0),
-                  ]),
+            content: [
+              {
+                columns: [
+                  {
+                    stack: [
+                      {
+                        text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                        style: 'header'
+                      },
+                      {
+                        text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                        style: 'descripcionText'
+                      },
+                    ]
+                  },
+                  {
+                    image: `data:image/png;base64,${logoBase64}`,
+                    width: 100,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 0]
+                  }
                 ]
               },
-              layout: {
-                hLineWidth: () => 0,
-                vLineWidth: () => 0,
-                paddingLeft: () => 8,
-                paddingRight: () => 8,
-                paddingTop: () => 4,
-                paddingBottom: () => 4,
-                fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+              {
+                text: 'Reporte de Ventas',
+                style: 'header'
               },
-            },
-          ],
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `${descripcion}`, style: 'subheader' },
+                      {
+                        text: `Fecha: ${formatearFecha(new Date())}`,
+                        style: 'fechaExpedicion',
+                      }
+                    ]
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `VALOR TOTAL: ${formatearPrecio(totalVentas)}`, style: 'subheader'
+                      },
+                    ]
+                  }
+                ]
+              },
+              {
+                table: {
+                  body: [
+                    [
+                      { text: 'Fecha', style: 'tableHeader' },
+                      { text: 'Cliente', style: 'tableHeader' },
+                      { text: 'Aves', style: 'tableHeader' },
+                      { text: 'Kilos', style: 'tableHeader' },
+                      { text: 'Precio Kilo', style: 'tableHeader' },
+                      { text: 'Total', style: 'tableHeader' },
+                    ],
+                    ...ventaData.map(venta => [
+                      formatearFecha(new Date(venta.fecha)),
+                      venta.cliente ? `${venta.cliente.toString()}` : 'Desconocido',
+                      venta.aves ? `${venta.aves.toString()}` : 'Desconocido',
+                      venta.kilos ? `${venta.kilos.toString()}` : 'Desconocido',
+                      formatearPrecio(Number(venta.precio).toFixed(0) || 0),
+                      formatearPrecio(Number(venta.total).toFixed(0) || 0),
+                    ]),
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0,
+                  vLineWidth: () => 0,
+                  paddingLeft: () => 8,
+                  paddingRight: () => 8,
+                  paddingTop: () => 4,
+                  paddingBottom: () => 4,
+                  fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                },
+              },
+            ],
 
-          styles: {
-            header: {
-              fontSize: 22,
-              color: "#ff9900",
-              bold: true,
-              alignment: 'left',
-              margin: [0, 10, 0, 10]
-            },
-            fechaExpedicion: {
-              fontSize: 12,
-              color: "#666",
-              italics: true,
-              margin: [0, 0, 0, 15]
-            },
-            tableHeader: {
-              bold: true,
-              fontSize: 12,
-              color: 'black'
+            styles: {
+              header: {
+                fontSize: 22,
+                color: "#ff9900",
+                bold: true,
+                alignment: 'left',
+                margin: [0, 10, 0, 10]
+              },
+              fechaExpedicion: {
+                fontSize: 12,
+                color: "#666",
+                italics: true,
+                margin: [0, 0, 0, 15]
+              },
+              tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black'
+              }
             }
-          }
-        };
+          };
 
 
-        break;
+          break;
 
         case '6':
 
-        const abonoData = await Lote.getReporteLotePayments(lotId);
-        const vData = await Lote.getReporteLoteSales(lotId);
+          const abonoData = await Lote.getReporteLotePayments(lotId);
+          const vData = await Lote.getReporteLoteSales(lotId);
 
-        const totalAbono = abonoData.reduce((acc, abono) => {
-          return acc + parseFloat(abono.valor);
-        }, 0);
+          const totalAbono = abonoData.reduce((acc, abono) => {
+            return acc + parseFloat(abono.valor);
+          }, 0);
 
-        const totalV = vData.reduce((acc, venta) => {
-          return acc + parseFloat(venta.total);
-        }, 0);
+          const totalV = vData.reduce((acc, venta) => {
+            return acc + parseFloat(venta.total);
+          }, 0);
 
-        const deudaTotal = totalV - totalAbono
+          const deudaTotal = totalV - totalAbono
 
-        if (!abonoData) {
-          return res.status(404).json({
-            success: false,
-            message: "No se encontraron datos de ventas para el lote",
-          });
-        }
-        docDefinition = {
-          pageMargins: [30, 80, 30, 100],
-          header: function (currentPage, pageCount, pageSize) {
-            return {
-              image: headerImageBase64,
-              width: 595,
-              height: 80,
-              alignment: 'center',
-              margin: [0, 0, 0, 0]
-            };
-          },
-          footer: function (currentPage, pageCount, pageSize) {
-            return {
-              image: footerImageBase64,
-              width: 595,
-              height: 80,
-              alignment: 'center',
-              margin: [0, 20, 0, 0]
-            };
-          },
-          content: [
-            {
-              columns: [
-                {
-                  stack: [
-                    {
-                      text: 'GRANJA DON RAFA LOTE BERMEJAL',
-                      style: 'header'
-                    },
-                    {
-                      text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
-                      style: 'descripcionText'
-                    },
-                  ]
-                },
-                {
-                  image: `data:image/png;base64,${logoBase64}`,
-                  width: 100,
-                  alignment: 'right',
-                  margin: [0, 0, 0, 0]
-                }
-              ]
+          if (!abonoData) {
+            return res.status(404).json({
+              success: false,
+              message: "No se encontraron datos de ventas para el lote",
+            });
+          }
+          docDefinition = {
+            pageMargins: [30, 80, 30, 100],
+            header: function (currentPage, pageCount, pageSize) {
+              return {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              };
             },
-            {
-              text: 'Reporte de Ventas',
-              style: 'header'
+            footer: function (currentPage, pageCount, pageSize) {
+              return {
+                image: footerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 20, 0, 0]
+              };
             },
-            {
-              columns: [
-                {
-                  stack: [
-                    { text: `${descripcion}`, style: 'subheader' },
-                    {
-                      text: `Fecha: ${formatearFecha(new Date())}`,
-                      style: 'fechaExpedicion',
-                    }
-                  ]
-                },
-                {
-                  stack: [
-                    {
-                      text: `VALOR TOTAL ABONADO: ${formatearPrecio(totalAbono)}`, style: 'subheader'
-                    },
-                    {
-                      text: `VALOR TOTAL EN DEUDA: ${formatearPrecio(deudaTotal)}`, style: 'subheader'
-                    },
-                  ]
-                }
-              ]
-            },
-            {
-              table: {
-                body: [
-                  [
-                    { text: 'Fecha', style: 'tableHeader' },
-                    { text: 'Cliente', style: 'tableHeader' },
-                    { text: 'Teléfono', style: 'tableHeader' },
-                    { text: 'Método Pago', style: 'tableHeader' },
-                    { text: 'Valor Abonado', style: 'tableHeader' },
-                  ],
-                  ...abonoData.map(abono => [
-                    formatearFecha(new Date(abono.fecha)),
-                    abono.cliente ? `${abono.cliente.toString()}` : 'Desconocido',
-                    abono.telefono ? `${abono.telefono.toString()}` : 'Desconocido',
-                    abono.metodo_pago ? `${abono.metodo_pago.toString()}` : 'Desconocido',
-                    formatearPrecio(Number(abono.valor).toFixed(0) || 0),
-                  ]),
+            content: [
+              {
+                columns: [
+                  {
+                    stack: [
+                      {
+                        text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                        style: 'header'
+                      },
+                      {
+                        text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                        style: 'descripcionText'
+                      },
+                    ]
+                  },
+                  {
+                    image: `data:image/png;base64,${logoBase64}`,
+                    width: 100,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 0]
+                  }
                 ]
               },
-              layout: {
-                hLineWidth: () => 0,
-                vLineWidth: () => 0,
-                paddingLeft: () => 8,
-                paddingRight: () => 8,
-                paddingTop: () => 4,
-                paddingBottom: () => 4,
-                fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+              {
+                text: 'Reporte de Ventas',
+                style: 'header'
               },
-            },
-          ],
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `${descripcion}`, style: 'subheader' },
+                      {
+                        text: `Fecha: ${formatearFecha(new Date())}`,
+                        style: 'fechaExpedicion',
+                      }
+                    ]
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `VALOR TOTAL ABONADO: ${formatearPrecio(totalAbono)}`, style: 'subheader'
+                      },
+                      {
+                        text: `VALOR TOTAL EN DEUDA: ${formatearPrecio(deudaTotal)}`, style: 'subheader'
+                      },
+                    ]
+                  }
+                ]
+              },
+              {
+                table: {
+                  body: [
+                    [
+                      { text: 'Fecha', style: 'tableHeader' },
+                      { text: 'Cliente', style: 'tableHeader' },
+                      { text: 'Teléfono', style: 'tableHeader' },
+                      { text: 'Método Pago', style: 'tableHeader' },
+                      { text: 'Valor Abonado', style: 'tableHeader' },
+                    ],
+                    ...abonoData.map(abono => [
+                      formatearFecha(new Date(abono.fecha)),
+                      abono.cliente ? `${abono.cliente.toString()}` : 'Desconocido',
+                      abono.telefono ? `${abono.telefono.toString()}` : 'Desconocido',
+                      abono.metodo_pago ? `${abono.metodo_pago.toString()}` : 'Desconocido',
+                      formatearPrecio(Number(abono.valor).toFixed(0) || 0),
+                    ]),
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0,
+                  vLineWidth: () => 0,
+                  paddingLeft: () => 8,
+                  paddingRight: () => 8,
+                  paddingTop: () => 4,
+                  paddingBottom: () => 4,
+                  fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                },
+              },
+            ],
 
-          styles: {
-            header: {
-              fontSize: 22,
-              color: "#ff9900",
-              bold: true,
-              alignment: 'left',
-              margin: [0, 10, 0, 10]
-            },
-            fechaExpedicion: {
-              fontSize: 12,
-              color: "#666",
-              italics: true,
-              margin: [0, 0, 0, 15]
-            },
-            tableHeader: {
-              bold: true,
-              fontSize: 12,
-              color: 'black'
+            styles: {
+              header: {
+                fontSize: 22,
+                color: "#ff9900",
+                bold: true,
+                alignment: 'left',
+                margin: [0, 10, 0, 10]
+              },
+              fechaExpedicion: {
+                fontSize: 12,
+                color: "#666",
+                italics: true,
+                margin: [0, 0, 0, 15]
+              },
+              tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black'
+              }
             }
+          };
+
+
+          break;
+
+        case '7':
+
+          const customerData = await Lote.getReporteLoteCustomers(lotId);
+
+          const totalAbonado = customerData.reduce((acc, customer) => {
+            return acc + parseFloat(customer.total_payments);
+          }, 0);
+
+          const totalComprado = customerData.reduce((acc, customer) => {
+            return acc + parseFloat(customer.total_sales);
+          }, 0);
+
+          const totalDeuda = customerData.reduce((acc, customer) => {
+            return acc + parseFloat(customer.deuda_actual);
+          }, 0);
+
+          if (!customerData) {
+            return res.status(404).json({
+              success: false,
+              message: "No se encontraron datos de ventas para el lote",
+            });
           }
-        };
+          docDefinition = {
+            pageMargins: [30, 80, 30, 100],
+            header: function (currentPage, pageCount, pageSize) {
+              return {
+                image: headerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 0, 0, 0]
+              };
+            },
+            footer: function (currentPage, pageCount, pageSize) {
+              return {
+                image: footerImageBase64,
+                width: 595,
+                height: 80,
+                alignment: 'center',
+                margin: [0, 20, 0, 0]
+              };
+            },
+            content: [
+              {
+                columns: [
+                  {
+                    stack: [
+                      {
+                        text: 'GRANJA DON RAFA LOTE BERMEJAL',
+                        style: 'header'
+                      },
+                      {
+                        text: 'VEREDA BERMEJAL KDX 1 A\nOCAÑA, NORTE DE SANTANDER\n310 767 2929 - 314 374 4532',
+                        style: 'descripcionText'
+                      },
+                    ]
+                  },
+                  {
+                    image: `data:image/png;base64,${logoBase64}`,
+                    width: 100,
+                    alignment: 'right',
+                    margin: [0, 0, 0, 0]
+                  }
+                ]
+              },
+              {
+                text: 'Reporte de Ventas',
+                style: 'header'
+              },
+              {
+                columns: [
+                  {
+                    stack: [
+                      { text: `${descripcion}`, style: 'subheader' },
+                      {
+                        text: `Fecha: ${formatearFecha(new Date())}`,
+                        style: 'fechaExpedicion',
+                      }
+                    ]
+                  },
+                  {
+                    stack: [
+                      {
+                        text: `VALOR TOTAL VENTAS: ${formatearPrecio(totalComprado)}`, style: 'subheader'
+                      },
+                      {
+                        text: `VALOR TOTAL ABONADO: ${formatearPrecio(totalAbonado)}`, style: 'subheader'
+                      },
+                      {
+                        text: `VALOR TOTAL EN DEUDA: ${formatearPrecio(totalDeuda)}`, style: 'subheader'
+                      },
+                    ]
+                    
+                  }
+                ],
+                
+                margin: [0,0,0,10],
+              },
+              {
+                table: {
+                  widths: [170,'*','*','*'],
+                  body: [
+                    [
+                      { text: 'Cliente', style: 'tableHeader' },
+                      { text: 'Total Comprado', style: 'tableHeader' },
+                      { text: 'Total Abonado', style: 'tableHeader' },
+                      { text: 'Deuda Actual', style: 'tableHeader' },
+                    ],
+                    ...customerData.map(customer => [
+                      customer.cliente_nombre ? `${customer.cliente_nombre.toString()}` : 'Desconocido',
+                      formatearPrecio(Number(customer.total_sales).toFixed(0) || 0),
+                      formatearPrecio(Number(customer.total_payments).toFixed(0) || 0),
+                      formatearPrecio(Number(customer.deuda_actual).toFixed(0) || 0),
+                    ]),
+                  ]
+                },
+                layout: {
+                  hLineWidth: () => 0,
+                  vLineWidth: () => 0,
+                  paddingLeft: () => 8,
+                  paddingRight: () => 8,
+                  paddingTop: () => 4,
+                  paddingBottom: () => 4,
+                  fillColor: (rowIndex) => (rowIndex % 2 === 0) ? '#fce5cd' : null
+                },
+              },
+            ],
+
+            styles: {
+              header: {
+                fontSize: 22,
+                color: "#ff9900",
+                bold: true,
+                alignment: 'left',
+                margin: [0, 10, 0, 10]
+              },
+              fechaExpedicion: {
+                fontSize: 12,
+                color: "#666",
+                italics: true,
+                margin: [0, 0, 0, 15]
+              },
+              tableHeader: {
+                bold: true,
+                fontSize: 12,
+                color: 'black'
+              }
+            }
+          };
 
 
-        break;
+          break;
 
         default:
           return res.status(400).json({

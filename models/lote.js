@@ -366,6 +366,82 @@ Lote.getReporteLotePayments = (loteId) => {
     return db.any(sql, [loteId]);
 };
 
+Lote.getReporteLoteCustomers = (loteId) => {
+    const sql = `
+    WITH Sales_Calculated AS (
+        SELECT 
+            S.lote_id,
+            S.cliente_id,
+            SUM(S.preciokilo * (
+                (SELECT SUM(llenado) FROM UNNEST(S.canastas_llenas) AS llenado) -
+                (SELECT SUM(vaciado) FROM UNNEST(S.canastas_vacias) AS vaciado)
+            )) AS total_sales
+        FROM 
+            sales S
+        GROUP BY 
+            S.lote_id, S.cliente_id
+    ),
+    Payments_Sum AS (
+        SELECT 
+            P.lote_id,
+            P.cliente_id,
+            P.fecha,
+            SUM(P.valor) OVER (PARTITION BY P.lote_id, P.cliente_id ORDER BY P.fecha) AS total_payments
+        FROM 
+            payments P
+    ),
+    Payments_Last_Abono AS (
+        SELECT 
+            P.lote_id,
+            P.cliente_id,
+            MAX(P.fecha) AS fecha_ultima,
+            (SELECT valor FROM payments WHERE lote_id = P.lote_id AND cliente_id = P.cliente_id ORDER BY fecha DESC LIMIT 1) AS ultimo_abono
+        FROM 
+            payments P
+        GROUP BY 
+            P.lote_id, P.cliente_id
+    ),
+    Customer_Lote_Details AS (
+        SELECT 
+            C.id AS cliente_id,
+            C.nombre AS cliente_nombre,
+            L.id AS lote_id,
+            L.descripcion AS lote_nombre,
+            COALESCE(SC.total_sales, 0) AS total_sales,
+            COALESCE(MAX(PS.total_payments), 0) AS total_payments,
+            COALESCE(PLA.ultimo_abono, 0) AS ultimo_abono
+        FROM 
+            customers C
+        LEFT JOIN 
+            Sales_Calculated SC ON C.id = SC.cliente_id
+        LEFT JOIN 
+            lote L ON SC.lote_id = L.id
+        LEFT JOIN 
+            Payments_Sum PS ON SC.lote_id = PS.lote_id AND SC.cliente_id = PS.cliente_id
+        LEFT JOIN 
+            Payments_Last_Abono PLA ON SC.lote_id = PLA.lote_id AND SC.cliente_id = PLA.cliente_id
+        GROUP BY 
+            C.id, C.nombre, L.id, L.descripcion, SC.total_sales, PLA.ultimo_abono
+    )
+    SELECT
+        CLD.cliente_id,
+        CLD.cliente_nombre,
+        CLD.lote_id,
+        CLD.lote_nombre,
+        CLD.total_sales,
+        CLD.total_payments,
+        CLD.total_sales - CLD.total_payments AS deuda_actual
+    FROM 
+        Customer_Lote_Details CLD
+    WHERE 
+        CLD.lote_id = $1
+    ORDER BY 
+        CLD.cliente_id, CLD.lote_id;
+
+    `;
+    return db.any(sql, [loteId]);
+};
+
 Lote.getTotalLote = () => {
     const sql = `
         WITH lotes_activos AS (
