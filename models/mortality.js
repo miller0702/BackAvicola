@@ -108,9 +108,9 @@ Mortality.getTotalMortality = () => {
 Mortality.getMortalitiesByDay = () => {
     const sql = `
     WITH lotes_activos AS (
-    SELECT id
-    FROM lote
-    WHERE estado = 'activo'
+        SELECT id
+        FROM lote
+        WHERE estado = 'activo'
     ),
     mortality_filtrada AS (
         SELECT
@@ -120,21 +120,16 @@ Mortality.getMortalitiesByDay = () => {
         WHERE lote_id IN (SELECT id FROM lotes_activos)
     )
     SELECT
-        d.fecha,
+        mortality_filtrada.fecha AS fecha,
         COALESCE(SUM(mortality_filtrada.cantidadmacho), 0) AS totalMachos,
         COALESCE(SUM(mortality_filtrada.cantidadhembra), 0) AS totalHembras
     FROM
-        (
-            SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
-        ) AS d
-    LEFT JOIN
-        mortality_filtrada ON mortality_filtrada.fecha::date = d.fecha
+        mortality_filtrada
     GROUP BY
-        d.fecha
-    HAVING
-        COUNT(mortality_filtrada.cantidadmacho) > 0
+        mortality_filtrada.fecha
     ORDER BY
-        d.fecha;
+        mortality_filtrada.fecha;
+
 
     `;
     return db.manyOrNone(sql);

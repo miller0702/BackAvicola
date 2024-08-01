@@ -109,28 +109,25 @@ Food.getTotalFood = () => {
 Food.getFoodByDay = () => {
   const sql = `
       WITH lotes_activos AS (
-        SELECT id
-        FROM lote
-        WHERE estado = 'activo'
+          SELECT id
+          FROM lote
+          WHERE estado = 'activo'
       )
       SELECT
-          d.fecha,
+          food.fecha AS fecha,
           COALESCE(SUM(food.cantidadmacho), 0) AS totalMachos,
           COALESCE(SUM(food.cantidadhembra), 0) AS totalHembras
       FROM
-          (
-              SELECT generate_series(date_trunc('month', current_date)::date, (date_trunc('month', current_date) + interval '1 month - 1 day')::date, '1 day'::interval) AS fecha
-          ) AS d
-      LEFT JOIN
-          food ON food.fecha::date = d.fecha
+          food
       LEFT JOIN
           lotes_activos ON food.lote_id = lotes_activos.id
+      WHERE
+          lotes_activos.id IS NOT NULL
       GROUP BY
-          d.fecha
-      HAVING
-          COUNT(lotes_activos.id) > 0
+          food.fecha
       ORDER BY
-          d.fecha;
+          food.fecha;
+
     `;
   return db.manyOrNone(sql);
 };

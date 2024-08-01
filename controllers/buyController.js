@@ -1,6 +1,7 @@
 const Buys = require("../models/buy");
 
 module.exports = {
+
   async getAll(req, res, next) {
     try {
       const data = await Buys.getAll();
@@ -123,4 +124,5 @@ module.exports = {
       });
     }
   },
+  
 };
