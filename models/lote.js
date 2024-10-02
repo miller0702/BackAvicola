@@ -472,7 +472,7 @@ Lote.getTotalLote = () => {
         )
         SELECT
             CASE
-                WHEN EXISTS (SELECT 1 FROM lotes_activos) THEN
+                WHEN EXISTS (SELECT id FROM lotes_activos) THEN
                     COALESCE(lote_info.totallote, 0) - COALESCE(sales_info.vendidas, 0) - COALESCE(mortality_info.muertas, 0)
                 ELSE NULL
             END AS totallote
@@ -483,7 +483,7 @@ Lote.getTotalLote = () => {
         LEFT JOIN
             mortality_info ON true
         WHERE
-            EXISTS (SELECT 1 FROM lotes_activos);
+            EXISTS (SELECT id FROM lotes_activos);
 
     `;
     return db.oneOrNone(sql);
